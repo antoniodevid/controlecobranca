@@ -10,6 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Open+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://unpkg.com/chart.js@4/dist/chart.umd.js"></script>
 <style>
   :root {
     /* Paleta Meireles & Freitas */
@@ -163,6 +164,23 @@
   .metric .value { font-family: var(--font-heading); font-size: 22px; font-weight: 800; color: var(--mf-teal); }
 
   .col-center { text-align: center; }
+  .charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 28px;
+  }
+  .chart-subtitle {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 12px;
+  }
+  .chart-wrap { overflow-x: auto; }
+  .chart-inner { height: 260px; min-width: 100%; }
+  .chart-inner canvas { display: block; }
+
   .pdf-icon-link {
     display: inline-flex;
     align-items: center;
@@ -364,6 +382,21 @@
 
   <div class="metrics" id="metrics"></div>
 
+  <div class="card" id="chartsCard">
+    <h2>Faturamento em gráficos</h2>
+    <div class="charts-grid" id="chartsGrid">
+      <div>
+        <div class="chart-subtitle">Faturado por mês</div>
+        <div class="chart-wrap"><div class="chart-inner" id="chartMonthInner"><canvas id="chartMonth"></canvas></div></div>
+      </div>
+      <div>
+        <div class="chart-subtitle">Faturado por cliente</div>
+        <div class="chart-wrap"><div class="chart-inner" id="chartClientInner"><canvas id="chartClient"></canvas></div></div>
+      </div>
+    </div>
+    <p class="empty-state hidden" id="chartsEmpty">Nenhum valor faturado para exibir no filtro atual.</p>
+  </div>
+
   <div class="card" id="clientsCard">
     <h2>Clientes cadastrados</h2>
     <div class="grid">
@@ -490,6 +523,8 @@ let clients = [];
 let entries = [];
 let pendingDeleteId = null;
 let currentRole = null; // 'admin' ou 'viewer'
+let monthChart = null;
+let clientChart = null;
 
 function isConfigured() {
   return SUPABASE_URL && SUPABASE_URL !== 'COLOQUE_SUA_URL_AQUI' &&
@@ -728,10 +763,119 @@ function renderTable() {
   }
 }
 
+function chartOptions() {
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: (ctx) => fmtCurrency(ctx.parsed.y)
+        }
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: { callback: (v) => fmtCurrency(v) },
+        grid: { color: '#e3ded0' }
+      },
+      x: {
+        grid: { display: false }
+      }
+    }
+  };
+}
+
+function aggregateByMonth(filtered) {
+  const map = {};
+  filtered.forEach(e => {
+    if (e.faturou === 'sim') {
+      map[e.mes] = (map[e.mes] || 0) + (parseFloat(e.valor) || 0);
+    }
+  });
+  const months = Object.keys(map).sort();
+  return { labels: months.map(fmtMonth), values: months.map(m => map[m]) };
+}
+
+function aggregateByClient(filtered) {
+  const map = {};
+  filtered.forEach(e => {
+    if (e.faturou === 'sim') {
+      map[e.cliente] = (map[e.cliente] || 0) + (parseFloat(e.valor) || 0);
+    }
+  });
+  const sorted = Object.entries(map).sort((a, b) => b[1] - a[1]);
+  return { labels: sorted.map(s => s[0]), values: sorted.map(s => s[1]) };
+}
+
+function renderCharts() {
+  if (typeof Chart === 'undefined') return;
+
+  const filtered = getFilteredEntries();
+  const byMonth = aggregateByMonth(filtered);
+  const byClient = aggregateByClient(filtered);
+  const hasData = byMonth.labels.length > 0 || byClient.labels.length > 0;
+
+  document.getElementById('chartsEmpty').classList.toggle('hidden', hasData);
+  document.getElementById('chartsGrid').classList.toggle('hidden', !hasData);
+
+  if (!hasData) return;
+
+  document.getElementById('chartMonthInner').style.minWidth = Math.max(byMonth.labels.length * 70, 100) + 'px';
+  document.getElementById('chartClientInner').style.minWidth = Math.max(byClient.labels.length * 60, 100) + 'px';
+
+  if (monthChart) {
+    monthChart.data.labels = byMonth.labels;
+    monthChart.data.datasets[0].data = byMonth.values;
+    monthChart.update();
+  } else {
+    monthChart = new Chart(document.getElementById('chartMonth').getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: byMonth.labels,
+        datasets: [{
+          label: 'Faturado',
+          data: byMonth.values,
+          backgroundColor: '#1a944d',
+          hoverBackgroundColor: '#0a543d',
+          borderRadius: 4,
+          maxBarThickness: 44
+        }]
+      },
+      options: chartOptions()
+    });
+  }
+
+  if (clientChart) {
+    clientChart.data.labels = byClient.labels;
+    clientChart.data.datasets[0].data = byClient.values;
+    clientChart.update();
+  } else {
+    clientChart = new Chart(document.getElementById('chartClient').getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: byClient.labels,
+        datasets: [{
+          label: 'Faturado',
+          data: byClient.values,
+          backgroundColor: '#033838',
+          hoverBackgroundColor: '#0a543d',
+          borderRadius: 4,
+          maxBarThickness: 44
+        }]
+      },
+      options: chartOptions()
+    });
+  }
+}
+
 function renderAll() {
   renderClientsDropdowns();
   renderClientsList();
   renderMetrics();
+  renderCharts();
   renderTable();
 }
 
