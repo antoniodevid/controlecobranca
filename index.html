@@ -180,6 +180,8 @@
   .chart-wrap { overflow-x: auto; }
   .chart-inner { height: 260px; min-width: 100%; }
   .chart-inner canvas { display: block; }
+  .chart-wrap-v { overflow-y: auto; max-height: 480px; }
+  .chart-inner-v { min-height: 260px; width: 100%; }
 
   .pdf-icon-link {
     display: inline-flex;
@@ -391,7 +393,7 @@
       </div>
       <div>
         <div class="chart-subtitle">Faturado por cliente</div>
-        <div class="chart-wrap"><div class="chart-inner" id="chartClientInner"><canvas id="chartClient"></canvas></div></div>
+        <div class="chart-wrap-v"><div class="chart-inner-v" id="chartClientInner"><canvas id="chartClient"></canvas></div></div>
       </div>
     </div>
     <p class="empty-state hidden" id="chartsEmpty">Nenhum valor faturado para exibir no filtro atual.</p>
@@ -763,28 +765,26 @@ function renderTable() {
   }
 }
 
-function chartOptions() {
+function chartOptions(horizontal) {
+  const valueAxis = {
+    beginAtZero: true,
+    ticks: { callback: (v) => fmtCurrency(v) },
+    grid: { color: '#e3ded0' }
+  };
+  const categoryAxis = { grid: { display: false } };
   return {
+    indexAxis: horizontal ? 'y' : 'x',
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
       legend: { display: false },
       tooltip: {
         callbacks: {
-          label: (ctx) => fmtCurrency(ctx.parsed.y)
+          label: (ctx) => fmtCurrency(horizontal ? ctx.parsed.x : ctx.parsed.y)
         }
       }
     },
-    scales: {
-      y: {
-        beginAtZero: true,
-        ticks: { callback: (v) => fmtCurrency(v) },
-        grid: { color: '#e3ded0' }
-      },
-      x: {
-        grid: { display: false }
-      }
-    }
+    scales: horizontal ? { x: valueAxis, y: categoryAxis } : { x: categoryAxis, y: valueAxis }
   };
 }
 
@@ -824,7 +824,7 @@ function renderCharts() {
   if (!hasData) return;
 
   document.getElementById('chartMonthInner').style.minWidth = Math.max(byMonth.labels.length * 70, 100) + 'px';
-  document.getElementById('chartClientInner').style.minWidth = Math.max(byClient.labels.length * 60, 100) + 'px';
+  document.getElementById('chartClientInner').style.height = Math.max(byClient.labels.length * 34, 100) + 'px';
 
   if (monthChart) {
     monthChart.data.labels = byMonth.labels;
@@ -844,7 +844,7 @@ function renderCharts() {
           maxBarThickness: 44
         }]
       },
-      options: chartOptions()
+      options: chartOptions(false)
     });
   }
 
@@ -863,10 +863,10 @@ function renderCharts() {
           backgroundColor: '#033838',
           hoverBackgroundColor: '#0a543d',
           borderRadius: 4,
-          maxBarThickness: 44
+          maxBarThickness: 28
         }]
       },
-      options: chartOptions()
+      options: chartOptions(true)
     });
   }
 }
