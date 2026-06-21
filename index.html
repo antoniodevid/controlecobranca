@@ -162,15 +162,22 @@
   .metric .label { font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
   .metric .value { font-family: var(--font-heading); font-size: 22px; font-weight: 800; color: var(--mf-teal); }
 
-  .pdf-link {
-    color: var(--accent);
-    text-decoration: none;
-    font-size: 12px;
+  .col-center { text-align: center; }
+  .pdf-icon-link {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 7px;
+    color: var(--accent);
+    background: var(--accent-light);
+    text-decoration: none;
+    transition: background 0.15s, color 0.15s, transform 0.1s;
   }
-  .pdf-link:hover { text-decoration: underline; }
+  .pdf-icon-link:hover { background: var(--accent); color: white; }
+  .pdf-icon-link:active { transform: scale(0.94); }
+  .pdf-icon-empty { color: var(--text-secondary); }
 
   .empty-state {
     text-align: center;
@@ -436,7 +443,7 @@
             <th>Faturado</th>
             <th>Nº documento</th>
             <th>Valor</th>
-            <th>PDF</th>
+            <th class="col-center">PDF</th>
             <th>Observações</th>
             <th id="actionsHeader" class="hidden">Ações</th>
           </tr>
@@ -705,7 +712,7 @@ function renderTable() {
       <td>${e.faturou === 'sim' ? '<span class="badge badge-yes">Sim</span>' : '<span class="badge badge-no">Não</span>'}</td>
       <td>${escapeHtml(e.doc || '-')}</td>
       <td>${e.faturou === 'sim' ? fmtCurrency(e.valor) : '-'}</td>
-      <td>${e.pdf_url ? `<a class="pdf-link" href="${e.pdf_url}" target="_blank" rel="noopener"><i class="ti ti-file-text"></i>${escapeHtml(e.pdf_nome || 'abrir PDF')}</a>` : '-'}</td>
+      <td class="col-center">${e.pdf_url ? `<a class="pdf-icon-link" href="${e.pdf_url}" target="_blank" rel="noopener" title="${escapeHtml(e.pdf_nome || 'Abrir PDF')}" aria-label="Abrir PDF: ${escapeHtml(e.pdf_nome || '')}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg></a>` : '<span class="pdf-icon-empty">-</span>'}</td>
       <td style="max-width:200px; white-space:normal;">${escapeHtml(e.obs || '-')}</td>
       ${isAdmin ? `<td class="actions"><button class="btn-secondary btn-small delete-entry-btn" data-id="${e.id}">Excluir</button></td>` : ''}
     </tr>
