@@ -336,28 +336,35 @@
 
   <div class="card">
     <div class="login-tabs">
-      <button class="active" id="tabAdmin" type="button">Acesso administrador</button>
-      <button id="tabViewer" type="button">Acesso visualização</button>
+      <button class="active" id="tabLogin" type="button">Entrar</button>
+      <button id="tabSignup" type="button">Criar conta</button>
     </div>
 
-    <div id="adminLoginForm">
+    <div id="loginForm">
       <div class="field" style="margin-bottom:12px;">
-        <label for="adminEmail">E-mail</label>
-        <input type="email" id="adminEmail" placeholder="seu@email.com" autocomplete="username">
+        <label for="loginEmail">E-mail</label>
+        <input type="email" id="loginEmail" placeholder="seu@meirelesefreitas.com.br" autocomplete="username">
       </div>
       <div class="field" style="margin-bottom:12px;">
-        <label for="adminPassword">Senha</label>
-        <input type="password" id="adminPassword" placeholder="Sua senha" autocomplete="current-password">
+        <label for="loginPassword">Senha</label>
+        <input type="password" id="loginPassword" placeholder="Sua senha" autocomplete="current-password">
       </div>
-      <button class="btn-primary" id="adminLoginBtn" style="width:100%;">Entrar como administrador</button>
+      <button class="btn-primary" id="loginBtn" style="width:100%;">Entrar</button>
     </div>
 
-    <div id="viewerLoginForm" class="hidden">
+    <div id="signupForm" class="hidden">
       <div class="field" style="margin-bottom:12px;">
-        <label for="viewerPassword">Senha de visualização</label>
-        <input type="password" id="viewerPassword" placeholder="Senha compartilhada" autocomplete="current-password">
+        <label for="signupEmail">E-mail corporativo</label>
+        <input type="email" id="signupEmail" placeholder="voce@meirelesefreitas.com.br" autocomplete="username">
       </div>
-      <button class="btn-primary" id="viewerLoginBtn" style="width:100%;">Entrar como visualizador</button>
+      <div class="field" style="margin-bottom:12px;">
+        <label for="signupPassword">Crie uma senha</label>
+        <input type="password" id="signupPassword" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+      </div>
+      <button class="btn-primary" id="signupBtn" style="width:100%;">Criar conta</button>
+      <p style="font-size:12px; color:var(--text-secondary); margin:10px 0 0;">
+        Disponível apenas para e-mails @meirelesefreitas.com.br. Novas contas começam com acesso de visualização.
+      </p>
     </div>
 
     <p class="status-msg" id="loginStatus"></p>
@@ -372,6 +379,7 @@
       <p class="subtitle" style="margin:0;">Registro mensal de faturamento por cliente</p>
     </div>
     <div class="user-info">
+      <span id="userEmailLabel" style="font-size:12px; color: var(--text-secondary);"></span>
       <span id="userBadge" class="badge badge-role">-</span>
       <button class="btn-secondary btn-small" id="logoutBtn">Sair</button>
     </div>
@@ -488,6 +496,20 @@
       <div class="empty-state hidden" id="emptyState">Nenhum lançamento encontrado.</div>
     </div>
   </div>
+
+  <div class="card hidden" id="accessLogCard">
+    <h2>Log de acessos</h2>
+    <p class="subtitle" style="margin:0 0 16px;">Registro de quem entrou no sistema (visível só para administradores).</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>E-mail</th><th>Data e hora</th></tr>
+        </thead>
+        <tbody id="accessLogBody"></tbody>
+      </table>
+      <div class="empty-state hidden" id="accessLogEmpty">Nenhum acesso registrado ainda.</div>
+    </div>
+  </div>
 </div>
 
 <div class="modal-overlay hidden" id="confirmModal">
@@ -507,17 +529,16 @@
    - SUPABASE_URL: Project Settings > API > Project URL
    - SUPABASE_ANON_KEY: Project Settings > API > anon public key
 
-   ACESSO DE VISUALIZAÇÃO (somente leitura):
-   - VIEWER_EMAIL e VIEWER_PASSWORD: credenciais de uma conta criada
-     no Supabase Authentication exclusivamente para visualização.
-     Essa senha é a que você compartilha com quem só pode ver os dados.
+   ACESSO DOS USUÁRIOS:
+   - Cada pessoa cria sua própria conta (e-mail @meirelesefreitas.com.br + senha).
+   - O papel (admin/visualização) é definido na tabela "perfis" no Supabase.
+   - Novas contas entram automaticamente como "viewer". Para promover alguém
+     a administrador, atualize a coluna role na tabela perfis pelo painel do Supabase.
    ========================================================= */
 const SUPABASE_URL = 'https://odotkashembevyjekkzg.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9kb3RrYXNoZW1iZXZ5amVra3pnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MTIwMzYsImV4cCI6MjA5NzI4ODAzNn0.7iAChAtLxpwsaOy2jRsq77u3vwq_KvQWqPJkHGHK4I0';
 const PDF_BUCKET = 'notas-fiscais';
-
-const VIEWER_EMAIL = 'financeiro@meirelesefreitas.com.br';
-const VIEWER_PASSWORD = 'Financeiro2026';
+const ALLOWED_EMAIL_DOMAIN = '@meirelesefreitas.com.br';
 /* ========================================================= */
 
 let supabaseClient = null;
@@ -525,8 +546,10 @@ let clients = [];
 let entries = [];
 let pendingDeleteId = null;
 let currentRole = null; // 'admin' ou 'viewer'
+let currentUser = null;
 let monthChart = null;
 let clientChart = null;
+let accessLog = [];
 
 function isConfigured() {
   return SUPABASE_URL && SUPABASE_URL !== 'COLOQUE_SUA_URL_AQUI' &&
@@ -552,34 +575,59 @@ function escapeHtml(str) {
 
 /* ---------- Autenticação ---------- */
 
-async function loginAdmin(email, password) {
+async function loginUser(email, password) {
   const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
   if (error) throw error;
   return data;
 }
 
-async function loginViewer() {
-  const { data, error } = await supabaseClient.auth.signInWithPassword({
-    email: VIEWER_EMAIL,
-    password: VIEWER_PASSWORD
-  });
+async function signupUser(email, password) {
+  const { data, error } = await supabaseClient.auth.signUp({ email, password });
   if (error) throw error;
   return data;
 }
 
 async function logout() {
   await supabaseClient.auth.signOut();
+  currentUser = null;
+  currentRole = null;
+}
+
+// Busca o papel (admin/viewer) do usuário logado na tabela perfis.
+// Tenta algumas vezes caso o gatilho que cria o perfil ainda não tenha rodado.
+async function resolveRole(user) {
+  for (let tentativa = 0; tentativa < 3; tentativa++) {
+    const { data, error } = await supabaseClient
+      .from('perfis')
+      .select('role')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    if (!error && data) return data.role;
+    if (tentativa < 2) await new Promise(r => setTimeout(r, 500));
+  }
+  return 'viewer'; // fallback seguro
+}
+
+// Registra o acesso na tabela acessos (não bloqueia o login se falhar).
+async function registrarAcesso(user) {
+  try {
+    await supabaseClient.from('acessos').insert({ user_id: user.id, email: user.email });
+  } catch (e) {
+    // silencioso: log de acesso nunca deve impedir o uso do sistema
+  }
 }
 
 function applyRoleToUI(role) {
   currentRole = role;
   const isAdmin = role === 'admin';
 
+  document.getElementById('userEmailLabel').textContent = currentUser ? currentUser.email : '';
   document.getElementById('userBadge').textContent = isAdmin ? 'Administrador' : 'Somente visualização';
   document.getElementById('clientsCard').classList.toggle('hidden', !isAdmin);
   document.getElementById('entryCard').classList.toggle('hidden', !isAdmin);
   document.getElementById('readonlyNotice').classList.toggle('hidden', isAdmin);
   document.getElementById('actionsHeader').classList.toggle('hidden', !isAdmin);
+  document.getElementById('accessLogCard').classList.toggle('hidden', !isAdmin);
 }
 
 /* ---------- Carregamento de dados ---------- */
@@ -600,6 +648,16 @@ async function loadEntries() {
     .order('mes', { ascending: false });
   if (error) throw error;
   entries = data || [];
+}
+
+async function loadAccessLog() {
+  const { data, error } = await supabaseClient
+    .from('acessos')
+    .select('email, created_at')
+    .order('created_at', { ascending: false })
+    .limit(100);
+  if (error) throw error;
+  accessLog = data || [];
 }
 
 /* ---------- Operações de escrita (somente admin) ---------- */
@@ -871,19 +929,35 @@ function renderCharts() {
   }
 }
 
+function renderAccessLog() {
+  if (currentRole !== 'admin') return;
+  const tbody = document.getElementById('accessLogBody');
+  const empty = document.getElementById('accessLogEmpty');
+  tbody.innerHTML = accessLog.map(a => `
+    <tr>
+      <td>${escapeHtml(a.email)}</td>
+      <td>${new Date(a.created_at).toLocaleString('pt-BR')}</td>
+    </tr>
+  `).join('');
+  empty.classList.toggle('hidden', accessLog.length > 0);
+}
+
 function renderAll() {
   renderClientsDropdowns();
   renderClientsList();
   renderMetrics();
   renderCharts();
   renderTable();
+  renderAccessLog();
 }
 
 /* ---------- Inicialização ---------- */
 
 async function refreshAll(statusEl) {
   try {
-    await Promise.all([loadClients(), loadEntries()]);
+    const tasks = [loadClients(), loadEntries()];
+    if (currentRole === 'admin') tasks.push(loadAccessLog());
+    await Promise.all(tasks);
     renderAll();
   } catch (e) {
     if (statusEl) {
@@ -908,10 +982,13 @@ async function showApp(role) {
 function showLogin() {
   document.getElementById('appScreen').classList.add('hidden');
   document.getElementById('loginScreen').classList.remove('hidden');
-  document.getElementById('adminEmail').value = '';
-  document.getElementById('adminPassword').value = '';
-  document.getElementById('viewerPassword').value = '';
+  document.getElementById('loginEmail').value = '';
+  document.getElementById('loginPassword').value = '';
+  document.getElementById('signupEmail').value = '';
+  document.getElementById('signupPassword').value = '';
   document.getElementById('loginStatus').textContent = '';
+  currentUser = null;
+  currentRole = null;
 }
 
 async function init() {
@@ -920,7 +997,7 @@ async function init() {
   if (!isConfigured()) {
     document.getElementById('loginStatus').textContent = '';
     banner.classList.remove('hidden');
-    banner.innerHTML = 'Este arquivo ainda não está configurado. Edite o início do bloco <code>&lt;script&gt;</code> e preencha <code>SUPABASE_URL</code>, <code>SUPABASE_ANON_KEY</code>, <code>VIEWER_EMAIL</code> e <code>VIEWER_PASSWORD</code>.';
+    banner.innerHTML = 'Este arquivo ainda não está configurado. Edite o início do bloco <code>&lt;script&gt;</code> e preencha <code>SUPABASE_URL</code> e <code>SUPABASE_ANON_KEY</code>.';
     document.getElementById('appScreen').classList.remove('hidden');
     document.getElementById('loginScreen').classList.add('hidden');
     document.querySelectorAll('#appScreen input, #appScreen select, #appScreen textarea, #appScreen button').forEach(el => el.disabled = true);
@@ -958,25 +1035,32 @@ async function init() {
   }
 
   // Tabs de login
-  document.getElementById('tabAdmin').addEventListener('click', () => {
-    document.getElementById('tabAdmin').classList.add('active');
-    document.getElementById('tabViewer').classList.remove('active');
-    document.getElementById('adminLoginForm').classList.remove('hidden');
-    document.getElementById('viewerLoginForm').classList.add('hidden');
+  document.getElementById('tabLogin').addEventListener('click', () => {
+    document.getElementById('tabLogin').classList.add('active');
+    document.getElementById('tabSignup').classList.remove('active');
+    document.getElementById('loginForm').classList.remove('hidden');
+    document.getElementById('signupForm').classList.add('hidden');
     document.getElementById('loginStatus').textContent = '';
   });
 
-  document.getElementById('tabViewer').addEventListener('click', () => {
-    document.getElementById('tabViewer').classList.add('active');
-    document.getElementById('tabAdmin').classList.remove('active');
-    document.getElementById('viewerLoginForm').classList.remove('hidden');
-    document.getElementById('adminLoginForm').classList.add('hidden');
+  document.getElementById('tabSignup').addEventListener('click', () => {
+    document.getElementById('tabSignup').classList.add('active');
+    document.getElementById('tabLogin').classList.remove('active');
+    document.getElementById('signupForm').classList.remove('hidden');
+    document.getElementById('loginForm').classList.add('hidden');
     document.getElementById('loginStatus').textContent = '';
   });
 
-  document.getElementById('adminLoginBtn').addEventListener('click', async () => {
-    const email = document.getElementById('adminEmail').value.trim();
-    const password = document.getElementById('adminPassword').value;
+  async function handleLoginSuccess(user, statusEl) {
+    currentUser = user;
+    const role = await resolveRole(user);
+    registrarAcesso(user); // não bloqueia a entrada caso falhe
+    await showApp(role);
+  }
+
+  document.getElementById('loginBtn').addEventListener('click', async () => {
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
     const statusEl = document.getElementById('loginStatus');
 
     if (!email || !password) {
@@ -989,47 +1073,61 @@ async function init() {
     statusEl.className = 'status-msg';
 
     try {
-      await loginAdmin(email, password);
-      await showApp('admin');
+      const data = await loginUser(email, password);
+      await handleLoginSuccess(data.user, statusEl);
     } catch (e) {
       statusEl.textContent = 'Erro ao entrar: credenciais inválidas.';
       statusEl.className = 'status-msg error-flash';
     }
   });
 
-  document.getElementById('adminPassword').addEventListener('keydown', (ev) => {
-    if (ev.key === 'Enter') document.getElementById('adminLoginBtn').click();
+  document.getElementById('loginPassword').addEventListener('keydown', (ev) => {
+    if (ev.key === 'Enter') document.getElementById('loginBtn').click();
   });
 
-  document.getElementById('viewerLoginBtn').addEventListener('click', async () => {
-    const password = document.getElementById('viewerPassword').value;
+  document.getElementById('signupBtn').addEventListener('click', async () => {
+    const email = document.getElementById('signupEmail').value.trim().toLowerCase();
+    const password = document.getElementById('signupPassword').value;
     const statusEl = document.getElementById('loginStatus');
 
-    if (!password) {
-      statusEl.textContent = 'Informe a senha de visualização.';
+    if (!email || !password) {
+      statusEl.textContent = 'Informe e-mail e senha.';
       statusEl.className = 'status-msg';
       return;
     }
-    if (password !== VIEWER_PASSWORD) {
-      statusEl.textContent = 'Senha incorreta.';
+    if (!email.endsWith(ALLOWED_EMAIL_DOMAIN)) {
+      statusEl.textContent = `Use um e-mail ${ALLOWED_EMAIL_DOMAIN}.`;
+      statusEl.className = 'status-msg error-flash';
+      return;
+    }
+    if (password.length < 6) {
+      statusEl.textContent = 'A senha precisa ter ao menos 6 caracteres.';
       statusEl.className = 'status-msg error-flash';
       return;
     }
 
-    statusEl.textContent = 'Entrando...';
+    statusEl.textContent = 'Criando conta...';
     statusEl.className = 'status-msg';
 
     try {
-      await loginViewer();
-      await showApp('viewer');
+      const data = await signupUser(email, password);
+      if (data.session && data.user) {
+        // Confirmação de e-mail desativada no projeto: já entra direto
+        await handleLoginSuccess(data.user, statusEl);
+      } else {
+        statusEl.textContent = 'Conta criada! Verifique seu e-mail para confirmar e depois faça login.';
+        statusEl.className = 'status-msg';
+        document.getElementById('tabLogin').click();
+        document.getElementById('loginEmail').value = email;
+      }
     } catch (e) {
-      statusEl.textContent = 'Erro ao entrar como visualizador: ' + e.message;
+      statusEl.textContent = 'Erro ao criar conta: ' + e.message;
       statusEl.className = 'status-msg error-flash';
     }
   });
 
-  document.getElementById('viewerPassword').addEventListener('keydown', (ev) => {
-    if (ev.key === 'Enter') document.getElementById('viewerLoginBtn').click();
+  document.getElementById('signupPassword').addEventListener('keydown', (ev) => {
+    if (ev.key === 'Enter') document.getElementById('signupBtn').click();
   });
 
   document.getElementById('logoutBtn').addEventListener('click', async () => {
@@ -1180,7 +1278,8 @@ async function init() {
   // Verifica se já existe sessão ativa
   const { data: { session } } = await supabaseClient.auth.getSession();
   if (session) {
-    const role = session.user.email === VIEWER_EMAIL ? 'viewer' : 'admin';
+    currentUser = session.user;
+    const role = await resolveRole(session.user);
     await showApp(role);
   }
 }
