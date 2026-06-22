@@ -939,11 +939,39 @@ function chartOptions(horizontal) {
     ticks: { callback: (v) => fmtCurrency(v) },
     grid: { color: '#e3ded0' }
   };
-  const categoryAxis = { grid: { display: false } };
+  const categoryAxis = {
+    grid: { display: false },
+    ticks: {
+      autoSkip: false,
+      font: { size: 11 },
+      // Quebrar nomes longos em múltiplas linhas no máximo a cada 22 caracteres
+      callback: function(val) {
+        const label = this.getLabelForValue(val);
+        if (!label) return label;
+        const maxLen = 22;
+        if (label.length <= maxLen) return label;
+        // Quebra no espaço mais próximo antes do limite
+        const words = label.split(' ');
+        const lines = [];
+        let current = '';
+        for (const word of words) {
+          if ((current + ' ' + word).trim().length > maxLen && current) {
+            lines.push(current.trim());
+            current = word;
+          } else {
+            current = (current + ' ' + word).trim();
+          }
+        }
+        if (current) lines.push(current.trim());
+        return lines;
+      }
+    }
+  };
   return {
     indexAxis: horizontal ? 'y' : 'x',
     responsive: true,
     maintainAspectRatio: false,
+    layout: horizontal ? { padding: { left: 0 } } : {},
     plugins: {
       legend: { display: false },
       tooltip: {
@@ -1003,7 +1031,7 @@ function renderCharts() {
   if (!hasData) return;
 
   document.getElementById('chartMonthInner').style.minWidth = Math.max(byMonth.labels.length * 70, 100) + 'px';
-  document.getElementById('chartClientInner').style.height = Math.max(byClient.labels.length * 34, 100) + 'px';
+  document.getElementById('chartClientInner').style.height = Math.max(byClient.labels.length * 48, 120) + 'px';
 
   if (monthChart) {
     monthChart.data.labels = byMonth.labels;
