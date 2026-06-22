@@ -163,6 +163,39 @@
   .metric .label { font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
   .metric .value { font-family: var(--font-heading); font-size: 22px; font-weight: 800; color: var(--mf-teal); }
 
+  .export-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .export-bar span {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-right: 2px;
+  }
+  .btn-export {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 6px;
+    border: 1.5px solid var(--border);
+    background: var(--card);
+    color: var(--text);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    font-family: var(--font-body);
+  }
+  .btn-export:hover { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
+  .btn-export svg { flex-shrink: 0; }
+
   .col-center { text-align: center; }
   .charts-grid {
     display: grid;
@@ -481,6 +514,21 @@
 
   <div class="card">
     <h2>Base de lançamentos</h2>
+    <div class="export-bar">
+      <span>Exportar:</span>
+      <button class="btn-export" id="exportCsvBtn" title="Exportar como planilha CSV">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/><line x1="8" y1="9" x2="10" y2="9"/></svg>
+        CSV
+      </button>
+      <button class="btn-export" id="exportPdfBtn" title="Exportar como PDF para impressão">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="9" y2="21"/><line x1="9" y1="21" x2="15" y2="21"/><line x1="15" y1="15" x2="15" y2="21"/></svg>
+        PDF
+      </button>
+      <button class="btn-export" id="exportTxtBtn" title="Exportar como texto simples">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
+        TXT
+      </button>
+    </div>
     <div class="table-wrap">
       <table id="entriesTable">
         <thead>
@@ -1010,6 +1058,122 @@ function renderAccessLog() {
   empty.classList.toggle('hidden', accessLog.length > 0);
 }
 
+/* ---------- Exportações ---------- */
+
+const EXPORT_HEADERS = ['Cliente', 'Mês', 'Faturado', 'Nº Documento', 'Valor (R$)', 'Observações'];
+
+function exportRows() {
+  return getFilteredEntries().map(e => ({
+    cliente: e.cliente || '',
+    mes: fmtMonth(e.mes),
+    faturado: e.faturou === 'sim' ? 'Sim' : 'Não',
+    doc: e.doc || '-',
+    valor: e.faturou === 'sim' ? (parseFloat(e.valor) || 0).toFixed(2).replace('.', ',') : '-',
+    obs: e.obs || '-'
+  }));
+}
+
+function triggerDownload(content, filename, mime) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function exportFilename(ext) {
+  const now = new Date();
+  const d = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
+  return `faturamento_${d}.${ext}`;
+}
+
+function exportCsv() {
+  const rows = exportRows();
+  if (!rows.length) { alert('Nenhum lançamento para exportar com o filtro atual.'); return; }
+  const escape = v => `"${String(v).replace(/"/g, '""')}"`;
+  const lines = [
+    EXPORT_HEADERS.map(escape).join(';'),
+    ...rows.map(r => [r.cliente, r.mes, r.faturado, r.doc, r.valor, r.obs].map(escape).join(';'))
+  ];
+  triggerDownload('\uFEFF' + lines.join('\r\n'), exportFilename('csv'), 'text/csv;charset=utf-8;');
+}
+
+function exportTxt() {
+  const rows = exportRows();
+  if (!rows.length) { alert('Nenhum lançamento para exportar com o filtro atual.'); return; }
+  const COL = [32, 10, 10, 18, 16, 30];
+  const pad = (s, n) => String(s).substring(0, n).padEnd(n);
+  const separator = COL.map(n => '-'.repeat(n)).join('  ');
+  const header = EXPORT_HEADERS.map((h, i) => pad(h, COL[i])).join('  ');
+  const dataLines = rows.map(r =>
+    [r.cliente, r.mes, r.faturado, r.doc, r.valor, r.obs].map((v, i) => pad(v, COL[i])).join('  ')
+  );
+  const total = rows
+    .filter(r => r.faturado === 'Sim')
+    .reduce((s, r) => s + parseFloat(r.valor.replace(',', '.')) || 0, 0);
+  const content = [
+    'MEIRELES & FREITAS — Controle de Faturamento',
+    `Gerado em: ${new Date().toLocaleString('pt-BR')}`,
+    '',
+    header,
+    separator,
+    ...dataLines,
+    separator,
+    pad(`Total faturado: R$ ${total.toFixed(2).replace('.', ',')}`, COL.reduce((a,b)=>a+b+2,0))
+  ].join('\r\n');
+  triggerDownload(content, exportFilename('txt'), 'text/plain;charset=utf-8;');
+}
+
+function exportPdf() {
+  const rows = exportRows();
+  if (!rows.length) { alert('Nenhum lançamento para exportar com o filtro atual.'); return; }
+  const total = rows
+    .filter(r => r.faturado === 'Sim')
+    .reduce((s, r) => s + parseFloat(r.valor.replace(',', '.')) || 0, 0);
+  const tr = r => `<tr>
+    <td>${r.cliente}</td><td>${r.mes}</td>
+    <td class="${r.faturado==='Sim'?'sim':'nao'}">${r.faturado}</td>
+    <td>${r.doc}</td><td style="text-align:right">${r.faturado==='Sim'?'R$ '+r.valor:'-'}</td>
+    <td>${r.obs}</td>
+  </tr>`;
+  const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
+  <title>Faturamento — Meireles & Freitas</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Open+Sans:wght@400;600&display=swap');
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Open Sans', sans-serif; font-size: 11px; color: #152420; padding: 32px; }
+    h1 { font-family: 'Montserrat', sans-serif; font-size: 16px; color: #033838; margin-bottom: 2px; }
+    .meta { font-size: 10px; color: #5e6b63; margin-bottom: 20px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+    th { background: #033838; color: #efeadd; font-family: 'Montserrat', sans-serif; font-size: 10px;
+         text-transform: uppercase; letter-spacing: 0.4px; padding: 7px 8px; text-align: left; }
+    td { padding: 6px 8px; border-bottom: 1px solid #e3ded0; }
+    tr:nth-child(even) td { background: #f9f7f2; }
+    .sim { color: #1a944d; font-weight: 600; }
+    .nao { color: #cf222e; }
+    .total { text-align: right; font-family: 'Montserrat', sans-serif; font-size: 13px;
+             color: #033838; font-weight: 700; padding-top: 8px; }
+    @media print { body { padding: 16px; } }
+  </style></head><body>
+  <h1>Controle de Faturamento — Meireles & Freitas</h1>
+  <p class="meta">Gerado em: ${new Date().toLocaleString('pt-BR')} &nbsp;|&nbsp; ${rows.length} registro(s)</p>
+  <table>
+    <thead><tr>
+      <th>Cliente</th><th>Mês</th><th>Faturado</th>
+      <th>Nº Documento</th><th>Valor</th><th>Observações</th>
+    </tr></thead>
+    <tbody>${rows.map(tr).join('')}</tbody>
+  </table>
+  <div class="total">Total faturado: R$ ${total.toFixed(2).replace('.',',')}</div>
+  <script>window.onload=()=>{window.print();}<\/script>
+  </body></html>`;
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+}
+
 function renderAll() {
   renderClientsDropdowns();
   renderClientsList();
@@ -1197,6 +1361,10 @@ async function init() {
   document.getElementById('signupPassword').addEventListener('keydown', (ev) => {
     if (ev.key === 'Enter') document.getElementById('signupBtn').click();
   });
+
+  document.getElementById('exportCsvBtn').addEventListener('click', exportCsv);
+  document.getElementById('exportPdfBtn').addEventListener('click', exportPdf);
+  document.getElementById('exportTxtBtn').addEventListener('click', exportTxt);
 
   document.getElementById('logoutBtn').addEventListener('click', async () => {
     await logout();
