@@ -392,6 +392,22 @@
 
   <div class="metrics" id="metrics"></div>
 
+  <div class="card" id="filterCard">
+    <h2 style="margin-bottom:12px;">Filtros</h2>
+    <div class="toolbar">
+      <input type="text" id="filterSearch" class="grow" placeholder="Buscar por cliente, NF ou observação...">
+      <select id="filterClient"><option value="">Todos os clientes</option></select>
+      <input type="month" id="filterMonth">
+      <select id="filterFaturou">
+        <option value="">Faturado ou não</option>
+        <option value="sim">Faturado</option>
+        <option value="nao">Não faturado</option>
+      </select>
+      <button class="btn-secondary" id="clearFiltersBtn">Limpar filtros</button>
+      <button class="btn-secondary" id="refreshBtn">Atualizar</button>
+    </div>
+  </div>
+
   <div class="card" id="chartsCard">
     <h2>Faturamento em gráficos</h2>
     <div class="charts-grid" id="chartsGrid">
@@ -465,18 +481,6 @@
 
   <div class="card">
     <h2>Base de lançamentos</h2>
-    <div class="toolbar">
-      <input type="text" id="filterSearch" class="grow" placeholder="Buscar por cliente, NF ou observação...">
-      <select id="filterClient"><option value="">Todos os clientes</option></select>
-      <input type="month" id="filterMonth">
-      <select id="filterFaturou">
-        <option value="">Faturado ou não</option>
-        <option value="sim">Faturado</option>
-        <option value="nao">Não faturado</option>
-      </select>
-      <button class="btn-secondary" id="clearFiltersBtn">Limpar filtros</button>
-      <button class="btn-secondary" id="refreshBtn">Atualizar</button>
-    </div>
     <div class="table-wrap">
       <table id="entriesTable">
         <thead>
@@ -854,7 +858,7 @@ function aggregateByMonth(filtered) {
     }
   });
   const months = Object.keys(map).sort();
-  return { labels: months.map(fmtMonth), values: months.map(m => map[m]) };
+  return { labels: months.map(fmtMonth), values: months.map(m => map[m]), rawMonths: months };
 }
 
 function aggregateByClient(filtered) {
@@ -868,11 +872,26 @@ function aggregateByClient(filtered) {
   return { labels: sorted.map(s => s[0]), values: sorted.map(s => s[1]) };
 }
 
+function buildMonthColors(rawMonths) {
+  const activeMonth = document.getElementById('filterMonth')?.value || '';
+  return rawMonths.map(m =>
+    !activeMonth || m === activeMonth ? '#1a944d' : '#a4e845'
+  );
+}
+
+function buildClientColors(labels) {
+  const activeClient = document.getElementById('filterClient')?.value || '';
+  return labels.map(l =>
+    !activeClient || l === activeClient ? '#033838' : '#a3c742'
+  );
+}
+
 function renderCharts() {
   if (typeof Chart === 'undefined') return;
 
   const filtered = getFilteredEntries();
   const byMonth = aggregateByMonth(filtered);
+  const { rawMonths } = byMonth;
   const byClient = aggregateByClient(filtered);
   const hasData = byMonth.labels.length > 0 || byClient.labels.length > 0;
 
@@ -887,6 +906,7 @@ function renderCharts() {
   if (monthChart) {
     monthChart.data.labels = byMonth.labels;
     monthChart.data.datasets[0].data = byMonth.values;
+    monthChart.data.datasets[0].backgroundColor = buildMonthColors(rawMonths);
     monthChart.update();
   } else {
     monthChart = new Chart(document.getElementById('chartMonth').getContext('2d'), {
@@ -896,19 +916,43 @@ function renderCharts() {
         datasets: [{
           label: 'Faturado',
           data: byMonth.values,
-          backgroundColor: '#1a944d',
+          backgroundColor: buildMonthColors(rawMonths),
           hoverBackgroundColor: '#0a543d',
           borderRadius: 4,
           maxBarThickness: 44
         }]
       },
-      options: chartOptions(false)
+      options: {
+        ...chartOptions(false),
+        onClick(event, elements) {
+          if (!elements.length) return;
+          const raw = rawMonths[elements[0].index];
+          const sel = document.getElementById('filterMonth');
+          if (sel.value === raw) {
+            sel.value = '';
+          } else {
+            sel.value = raw;
+          }
+          sel.dispatchEvent(new Event('change'));
+        },
+        plugins: {
+          ...chartOptions(false).plugins,
+          tooltip: {
+            callbacks: {
+              label: (ctx) => fmtCurrency(ctx.parsed.y),
+              afterLabel: () => 'Clique para filtrar'
+            }
+          }
+        }
+      }
     });
+    document.getElementById('chartMonth').style.cursor = 'pointer';
   }
 
   if (clientChart) {
     clientChart.data.labels = byClient.labels;
     clientChart.data.datasets[0].data = byClient.values;
+    clientChart.data.datasets[0].backgroundColor = buildClientColors(byClient.labels);
     clientChart.update();
   } else {
     clientChart = new Chart(document.getElementById('chartClient').getContext('2d'), {
@@ -918,14 +962,38 @@ function renderCharts() {
         datasets: [{
           label: 'Faturado',
           data: byClient.values,
-          backgroundColor: '#033838',
+          backgroundColor: buildClientColors(byClient.labels),
           hoverBackgroundColor: '#0a543d',
           borderRadius: 4,
           maxBarThickness: 28
         }]
       },
-      options: chartOptions(true)
+      options: {
+        ...chartOptions(true),
+        onClick(event, elements) {
+          if (!elements.length) return;
+          const label = byClient.labels[elements[0].index];
+          const sel = document.getElementById('filterClient');
+          if (sel.value === label) {
+            // segundo clique no mesmo cliente → limpa o filtro
+            sel.value = '';
+          } else {
+            sel.value = label;
+          }
+          sel.dispatchEvent(new Event('change'));
+        },
+        plugins: {
+          ...chartOptions(true).plugins,
+          tooltip: {
+            callbacks: {
+              label: (ctx) => fmtCurrency(ctx.parsed.x),
+              afterLabel: () => 'Clique para filtrar'
+            }
+          }
+        }
+      }
     });
+    document.getElementById('chartClient').style.cursor = 'pointer';
   }
 }
 
