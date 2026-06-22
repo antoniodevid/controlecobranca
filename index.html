@@ -216,6 +216,38 @@
   .chart-wrap-v { overflow-y: auto; max-height: 480px; }
   .chart-inner-v { min-height: 260px; width: 100%; }
 
+  .pdf-alert-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #fff3e0;
+    border: 1px solid #f0c070;
+    border-left: 4px solid #e07b00;
+    border-radius: var(--radius);
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #6b3a00;
+    margin-bottom: 16px;
+  }
+  .pdf-alert-banner svg { flex-shrink: 0; color: #e07b00; }
+
+  .pdf-missing {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #8a4a00;
+    background: #fff3e0;
+    border: 1px solid #f0c070;
+    border-radius: 6px;
+    padding: 3px 7px;
+    white-space: nowrap;
+  }
+  tr.row-pdf-missing td { background: #fffbf2; }
+  tr.row-pdf-missing:hover td { background: #fff6e0; }
+
   .pdf-icon-link {
     display: inline-flex;
     align-items: center;
@@ -421,6 +453,11 @@
   <div id="configBanner" class="config-banner hidden"></div>
   <div id="readonlyNotice" class="readonly-notice hidden">
     Modo somente leitura: você pode consultar a base, mas não pode adicionar, editar ou excluir lançamentos.
+  </div>
+
+  <div id="pdfAlertBanner" class="pdf-alert-banner hidden">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <span id="pdfAlertText"></span>
   </div>
 
   <div class="metrics" id="metrics"></div>
@@ -841,6 +878,17 @@ function renderTable() {
     return a.cliente.localeCompare(b.cliente);
   });
 
+  // Alerta global de PDFs pendentes (sobre todos os lançamentos, não só o filtro atual)
+  const totalPendentes = entries.filter(e => e.faturou === 'sim' && !e.pdf_url).length;
+  const banner = document.getElementById('pdfAlertBanner');
+  const bannerText = document.getElementById('pdfAlertText');
+  if (totalPendentes > 0) {
+    bannerText.textContent = `${totalPendentes} nota${totalPendentes > 1 ? 's faturadas sem' : ' faturada sem'} PDF anexado — as linhas destacadas em laranja indicam quais são.`;
+    banner.classList.remove('hidden');
+  } else {
+    banner.classList.add('hidden');
+  }
+
   const tbody = document.getElementById('entriesBody');
   const emptyState = document.getElementById('emptyState');
   const isAdmin = currentRole === 'admin';
@@ -853,13 +901,18 @@ function renderTable() {
   emptyState.classList.add('hidden');
 
   tbody.innerHTML = filtered.map(e => `
-    <tr>
+    <tr class="${e.faturou === 'sim' && !e.pdf_url ? 'row-pdf-missing' : ''}">
       <td>${escapeHtml(e.cliente)}</td>
       <td>${fmtMonth(e.mes)}</td>
       <td>${e.faturou === 'sim' ? '<span class="badge badge-yes">Sim</span>' : '<span class="badge badge-no">Não</span>'}</td>
       <td>${escapeHtml(e.doc || '-')}</td>
       <td>${e.faturou === 'sim' ? fmtCurrency(e.valor) : '-'}</td>
-      <td class="col-center">${e.pdf_url ? `<a class="pdf-icon-link" href="${e.pdf_url}" target="_blank" rel="noopener" title="${escapeHtml(e.pdf_nome || 'Abrir PDF')}" aria-label="Abrir PDF: ${escapeHtml(e.pdf_nome || '')}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg></a>` : '<span class="pdf-icon-empty">-</span>'}</td>
+      <td class="col-center">${e.pdf_url
+        ? `<a class="pdf-icon-link" href="${e.pdf_url}" target="_blank" rel="noopener" title="${escapeHtml(e.pdf_nome || 'Abrir PDF')}" aria-label="Abrir PDF: ${escapeHtml(e.pdf_nome || '')}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg></a>`
+        : e.faturou === 'sim'
+          ? `<span class="pdf-missing" title="Nota faturada sem PDF anexado"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Pendente</span>`
+          : '<span class="pdf-icon-empty">-</span>'
+      }</td>
       <td style="max-width:200px; white-space:normal;">${escapeHtml(e.obs || '-')}</td>
       ${isAdmin ? `<td class="actions"><button class="btn-secondary btn-small delete-entry-btn" data-id="${e.id}">Excluir</button></td>` : ''}
     </tr>
