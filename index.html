@@ -232,6 +232,19 @@
   }
   .pdf-alert-banner svg { flex-shrink: 0; color: #e07b00; }
 
+  .badge-vertical {
+    display: inline-block;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--mf-teal);
+    background: #e6f3ee;
+    border: 1px solid #b6ddc9;
+    border-radius: 5px;
+    padding: 2px 7px;
+    white-space: nowrap;
+    letter-spacing: 0.2px;
+  }
+
   .pdf-missing {
     display: inline-flex;
     align-items: center;
@@ -466,6 +479,7 @@
     <h2 style="margin-bottom:12px;">Filtros</h2>
     <div class="toolbar">
       <input type="text" id="filterSearch" class="grow" placeholder="Buscar por cliente, NF ou observação...">
+      <select id="filterVertical"><option value="">Todas as verticais</option></select>
       <select id="filterClient"><option value="">Todos os clientes</option></select>
       <input type="month" id="filterMonth">
       <select id="filterFaturou">
@@ -570,6 +584,7 @@
       <table id="entriesTable">
         <thead>
           <tr>
+            <th>Vertical</th>
             <th>Cliente</th>
             <th>Mês</th>
             <th>Faturado</th>
@@ -632,6 +647,7 @@ const ALLOWED_EMAIL_DOMAIN = '@meirelesefreitas.com.br';
 
 let supabaseClient = null;
 let clients = [];
+let clientsData = []; // [{nome, vertical}]
 let entries = [];
 let pendingDeleteId = null;
 let currentRole = null; // 'admin' ou 'viewer'
@@ -724,10 +740,11 @@ function applyRoleToUI(role) {
 async function loadClients() {
   const { data, error } = await supabaseClient
     .from('clientes')
-    .select('nome')
+    .select('nome, vertical')
     .order('nome', { ascending: true });
   if (error) throw error;
-  clients = (data || []).map(r => r.nome);
+  clientsData = data || []; // [{nome, vertical}]
+  clients = clientsData.map(r => r.nome);
 }
 
 async function loadEntries() {
@@ -787,16 +804,24 @@ async function deleteEntry(id) {
 function renderClientsDropdowns() {
   const entrySel = document.getElementById('entryClient');
   const filterSel = document.getElementById('filterClient');
+  const verticalSel = document.getElementById('filterVertical');
   const prevEntry = entrySel.value;
   const prevFilter = filterSel.value;
+  const prevVertical = verticalSel.value;
 
   entrySel.innerHTML = '<option value="">Selecione...</option>' +
     clients.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
   filterSel.innerHTML = '<option value="">Todos os clientes</option>' +
     clients.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
 
+  // Verticais distintas dos lançamentos carregados
+  const verticais = [...new Set(entries.map(e => e.vertical).filter(Boolean))].sort();
+  verticalSel.innerHTML = '<option value="">Todas as verticais</option>' +
+    verticais.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+
   if (clients.includes(prevEntry)) entrySel.value = prevEntry;
   if (clients.includes(prevFilter)) filterSel.value = prevFilter;
+  if (verticais.includes(prevVertical)) verticalSel.value = prevVertical;
 }
 
 function renderClientsList() {
@@ -832,13 +857,15 @@ function getFilteredEntries() {
   const client = document.getElementById('filterClient').value;
   const month = document.getElementById('filterMonth').value;
   const faturou = document.getElementById('filterFaturou').value;
+  const vertical = document.getElementById('filterVertical').value;
 
   return entries.filter(e => {
+    if (vertical && e.vertical !== vertical) return false;
     if (client && e.cliente !== client) return false;
     if (month && e.mes !== month) return false;
     if (faturou && e.faturou !== faturou) return false;
     if (search) {
-      const haystack = `${e.cliente} ${e.doc || ''} ${e.obs || ''}`.toLowerCase();
+      const haystack = `${e.cliente} ${e.doc || ''} ${e.obs || ''} ${e.vertical || ''}`.toLowerCase();
       if (!haystack.includes(search)) return false;
     }
     return true;
@@ -902,6 +929,7 @@ function renderTable() {
 
   tbody.innerHTML = filtered.map(e => `
     <tr class="${e.faturou === 'sim' && !e.pdf_url ? 'row-pdf-missing' : ''}">
+      <td>${e.vertical ? `<span class="badge-vertical">${escapeHtml(e.vertical)}</span>` : '<span class="pdf-icon-empty">-</span>'}</td>
       <td>${escapeHtml(e.cliente)}</td>
       <td>${fmtMonth(e.mes)}</td>
       <td>${e.faturou === 'sim' ? '<span class="badge badge-yes">Sim</span>' : '<span class="badge badge-no">Não</span>'}</td>
@@ -1113,10 +1141,11 @@ function renderAccessLog() {
 
 /* ---------- Exportações ---------- */
 
-const EXPORT_HEADERS = ['Cliente', 'Mês', 'Faturado', 'Nº Documento', 'Valor (R$)', 'Observações'];
+const EXPORT_HEADERS = ['Vertical', 'Cliente', 'Mês', 'Faturado', 'Nº Documento', 'Valor (R$)', 'Observações'];
 
 function exportRows() {
   return getFilteredEntries().map(e => ({
+    vertical: e.vertical || '-',
     cliente: e.cliente || '',
     mes: fmtMonth(e.mes),
     faturado: e.faturou === 'sim' ? 'Sim' : 'Não',
@@ -1148,7 +1177,7 @@ function exportCsv() {
   const escape = v => `"${String(v).replace(/"/g, '""')}"`;
   const lines = [
     EXPORT_HEADERS.map(escape).join(';'),
-    ...rows.map(r => [r.cliente, r.mes, r.faturado, r.doc, r.valor, r.obs].map(escape).join(';'))
+    ...rows.map(r => [r.vertical, r.cliente, r.mes, r.faturado, r.doc, r.valor, r.obs].map(escape).join(';'))
   ];
   triggerDownload('\uFEFF' + lines.join('\r\n'), exportFilename('csv'), 'text/csv;charset=utf-8;');
 }
@@ -1156,12 +1185,12 @@ function exportCsv() {
 function exportTxt() {
   const rows = exportRows();
   if (!rows.length) { alert('Nenhum lançamento para exportar com o filtro atual.'); return; }
-  const COL = [32, 10, 10, 18, 16, 30];
+  const COL = [30, 30, 10, 10, 18, 16, 30];
   const pad = (s, n) => String(s).substring(0, n).padEnd(n);
   const separator = COL.map(n => '-'.repeat(n)).join('  ');
   const header = EXPORT_HEADERS.map((h, i) => pad(h, COL[i])).join('  ');
   const dataLines = rows.map(r =>
-    [r.cliente, r.mes, r.faturado, r.doc, r.valor, r.obs].map((v, i) => pad(v, COL[i])).join('  ')
+    [r.vertical, r.cliente, r.mes, r.faturado, r.doc, r.valor, r.obs].map((v, i) => pad(v, COL[i])).join('  ')
   );
   const total = rows
     .filter(r => r.faturado === 'Sim')
@@ -1186,7 +1215,7 @@ function exportPdf() {
     .filter(r => r.faturado === 'Sim')
     .reduce((s, r) => s + parseFloat(r.valor.replace(',', '.')) || 0, 0);
   const tr = r => `<tr>
-    <td>${r.cliente}</td><td>${r.mes}</td>
+    <td>${r.vertical}</td><td>${r.cliente}</td><td>${r.mes}</td>
     <td class="${r.faturado==='Sim'?'sim':'nao'}">${r.faturado}</td>
     <td>${r.doc}</td><td style="text-align:right">${r.faturado==='Sim'?'R$ '+r.valor:'-'}</td>
     <td>${r.obs}</td>
@@ -1214,7 +1243,7 @@ function exportPdf() {
   <p class="meta">Gerado em: ${new Date().toLocaleString('pt-BR')} &nbsp;|&nbsp; ${rows.length} registro(s)</p>
   <table>
     <thead><tr>
-      <th>Cliente</th><th>Mês</th><th>Faturado</th>
+      <th>Vertical</th><th>Cliente</th><th>Mês</th><th>Faturado</th>
       <th>Nº Documento</th><th>Valor</th><th>Observações</th>
     </tr></thead>
     <tbody>${rows.map(tr).join('')}</tbody>
@@ -1516,13 +1545,14 @@ async function init() {
     }
   });
 
-  ['filterSearch', 'filterClient', 'filterMonth', 'filterFaturou'].forEach(id => {
+  ['filterSearch', 'filterVertical', 'filterClient', 'filterMonth', 'filterFaturou'].forEach(id => {
     document.getElementById(id).addEventListener('input', renderAll);
     document.getElementById(id).addEventListener('change', renderAll);
   });
 
   document.getElementById('clearFiltersBtn').addEventListener('click', () => {
     document.getElementById('filterSearch').value = '';
+    document.getElementById('filterVertical').value = '';
     document.getElementById('filterClient').value = '';
     document.getElementById('filterMonth').value = '';
     document.getElementById('filterFaturou').value = '';
