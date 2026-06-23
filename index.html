@@ -676,7 +676,7 @@
     <p class="login-form-title">Faturamento</p>
     <p class="login-form-sub">Entre com sua conta corporativa para continuar</p>
 
-    <div class="login-tabs">
+    <div class="login-tabs" id="login-tabs-wrap">
       <button class="active" id="tabLogin" type="button">Entrar</button>
       <button id="tabSignup" type="button">Criar conta</button>
     </div>
@@ -691,9 +691,22 @@
         <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
       </div>
       <button class="login-submit" id="loginBtn">Entrar</button>
+      <button type="button" id="forgotPasswordBtn" style="width:100%; margin-top:10px; background:none; border:none; color:var(--mf-verde); font-size:13px; font-weight:600; cursor:pointer; padding:6px;">
+        Esqueceu sua senha?
+      </button>
     </div>
 
     <div id="signupForm" class="hidden">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:0;">
+        <div class="login-field">
+          <label for="signupNome">Nome</label>
+          <input type="text" id="signupNome" placeholder="Seu nome" autocomplete="given-name">
+        </div>
+        <div class="login-field">
+          <label for="signupSobrenome">Sobrenome</label>
+          <input type="text" id="signupSobrenome" placeholder="Seu sobrenome" autocomplete="family-name">
+        </div>
+      </div>
       <div class="login-field">
         <label for="signupEmail">E-mail corporativo</label>
         <input type="email" id="signupEmail" placeholder="voce@meirelesefreitas.com.br" autocomplete="username">
@@ -704,6 +717,20 @@
       </div>
       <button class="login-submit" id="signupBtn">Criar conta</button>
       <p class="login-hint">Disponível apenas para @meirelesefreitas.com.br. Novas contas começam como visualização.</p>
+    </div>
+
+    <div id="resetForm" class="hidden">
+      <p style="font-size:13px; color:var(--text-secondary); margin:0 0 18px; line-height:1.6;">
+        Informe seu e-mail corporativo e enviaremos um link para você redefinir sua senha.
+      </p>
+      <div class="login-field">
+        <label for="resetEmail">E-mail</label>
+        <input type="email" id="resetEmail" placeholder="voce@meirelesefreitas.com.br" autocomplete="email">
+      </div>
+      <button class="login-submit" id="resetBtn">Enviar link de recuperação</button>
+      <button type="button" id="backToLoginBtn" style="width:100%; margin-top:10px; background:none; border:none; color:var(--mf-verde); font-size:13px; font-weight:600; cursor:pointer; padding:6px;">
+        ← Voltar para o login
+      </button>
     </div>
 
     <p class="status-msg" id="loginStatus" style="margin-top:14px;"></p>
@@ -961,8 +988,12 @@ async function loginUser(email, password) {
   return data;
 }
 
-async function signupUser(email, password) {
-  const { data, error } = await supabaseClient.auth.signUp({ email, password });
+async function signupUser(email, password, nome, sobrenome) {
+  const { data, error } = await supabaseClient.auth.signUp({
+    email,
+    password,
+    options: { data: { nome, sobrenome } }
+  });
   if (error) throw error;
   return data;
 }
@@ -979,10 +1010,13 @@ async function resolveRole(user) {
   for (let tentativa = 0; tentativa < 3; tentativa++) {
     const { data, error } = await supabaseClient
       .from('perfis')
-      .select('role')
+      .select('role, nome, sobrenome')
       .eq('user_id', user.id)
       .maybeSingle();
-    if (!error && data) return data.role;
+    if (!error && data) {
+      if (data.nome) currentUser.displayName = `${data.nome} ${data.sobrenome || ''}`.trim();
+      return data.role;
+    }
     if (tentativa < 2) await new Promise(r => setTimeout(r, 500));
   }
   return 'viewer'; // fallback seguro
@@ -1001,7 +1035,8 @@ function applyRoleToUI(role) {
   currentRole = role;
   const isAdmin = role === 'admin';
 
-  document.getElementById('userEmailLabel').textContent = currentUser ? currentUser.email : '';
+  document.getElementById('userEmailLabel').textContent =
+    currentUser?.displayName || currentUser?.email || '';
   document.getElementById('userBadge').textContent = isAdmin ? 'Administrador' : 'Somente visualização';
   document.getElementById('clientsCard').classList.toggle('hidden', !isAdmin);
   document.getElementById('entryCard').classList.toggle('hidden', !isAdmin);
@@ -1656,7 +1691,17 @@ function showLogin() {
   document.getElementById('loginPassword').value = '';
   document.getElementById('signupEmail').value = '';
   document.getElementById('signupPassword').value = '';
+  document.getElementById('signupNome').value = '';
+  document.getElementById('signupSobrenome').value = '';
+  document.getElementById('resetEmail').value = '';
   document.getElementById('loginStatus').textContent = '';
+  // Garantir que as abas estejam no estado padrão
+  document.getElementById('tabLogin').classList.add('active');
+  document.getElementById('tabSignup').classList.remove('active');
+  document.getElementById('loginForm').classList.remove('hidden');
+  document.getElementById('signupForm').classList.add('hidden');
+  document.getElementById('resetForm').classList.add('hidden');
+  document.getElementById('login-tabs-wrap').classList.remove('hidden');
   currentUser = null;
   currentRole = null;
 }
@@ -1756,13 +1801,20 @@ async function init() {
   });
 
   document.getElementById('signupBtn').addEventListener('click', async () => {
+    const nome = document.getElementById('signupNome').value.trim();
+    const sobrenome = document.getElementById('signupSobrenome').value.trim();
     const email = document.getElementById('signupEmail').value.trim().toLowerCase();
     const password = document.getElementById('signupPassword').value;
     const statusEl = document.getElementById('loginStatus');
 
+    if (!nome) {
+      statusEl.textContent = 'Informe seu nome.';
+      statusEl.className = 'status-msg error-flash';
+      return;
+    }
     if (!email || !password) {
       statusEl.textContent = 'Informe e-mail e senha.';
-      statusEl.className = 'status-msg';
+      statusEl.className = 'status-msg error-flash';
       return;
     }
     if (!email.endsWith(ALLOWED_EMAIL_DOMAIN)) {
@@ -1780,9 +1832,8 @@ async function init() {
     statusEl.className = 'status-msg';
 
     try {
-      const data = await signupUser(email, password);
+      const data = await signupUser(email, password, nome, sobrenome);
       if (data.session && data.user) {
-        // Confirmação de e-mail desativada no projeto: já entra direto
         await handleLoginSuccess(data.user, statusEl);
       } else {
         statusEl.textContent = 'Conta criada! Verifique seu e-mail para confirmar e depois faça login.';
@@ -1798,6 +1849,60 @@ async function init() {
 
   document.getElementById('signupPassword').addEventListener('keydown', (ev) => {
     if (ev.key === 'Enter') document.getElementById('signupBtn').click();
+  });
+
+  // ── Recuperação de senha ──
+  function showResetForm() {
+    document.getElementById('loginForm').classList.add('hidden');
+    document.getElementById('signupForm').classList.add('hidden');
+    document.getElementById('login-tabs-wrap').classList.add('hidden');
+    document.getElementById('resetForm').classList.remove('hidden');
+    document.getElementById('loginStatus').textContent = '';
+  }
+
+  function hideResetForm() {
+    document.getElementById('resetForm').classList.add('hidden');
+    document.getElementById('login-tabs-wrap').classList.remove('hidden');
+    document.getElementById('loginForm').classList.remove('hidden');
+    document.getElementById('loginStatus').textContent = '';
+  }
+
+  document.getElementById('forgotPasswordBtn').addEventListener('click', showResetForm);
+  document.getElementById('backToLoginBtn').addEventListener('click', hideResetForm);
+
+  document.getElementById('resetBtn').addEventListener('click', async () => {
+    const email = document.getElementById('resetEmail').value.trim().toLowerCase();
+    const statusEl = document.getElementById('loginStatus');
+
+    if (!email) {
+      statusEl.textContent = 'Informe seu e-mail.';
+      statusEl.className = 'status-msg error-flash';
+      return;
+    }
+    if (!email.endsWith(ALLOWED_EMAIL_DOMAIN)) {
+      statusEl.textContent = `Use um e-mail ${ALLOWED_EMAIL_DOMAIN}.`;
+      statusEl.className = 'status-msg error-flash';
+      return;
+    }
+
+    statusEl.textContent = 'Enviando link...';
+    statusEl.className = 'status-msg';
+
+    try {
+      const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.href
+      });
+      if (error) throw error;
+      statusEl.textContent = `Link enviado para ${email}. Verifique sua caixa de entrada.`;
+      statusEl.className = 'status-msg';
+    } catch (e) {
+      statusEl.textContent = 'Erro ao enviar: ' + e.message;
+      statusEl.className = 'status-msg error-flash';
+    }
+  });
+
+  document.getElementById('resetEmail').addEventListener('keydown', (ev) => {
+    if (ev.key === 'Enter') document.getElementById('resetBtn').click();
   });
 
   document.getElementById('exportCsvBtn').addEventListener('click', exportCsv);
