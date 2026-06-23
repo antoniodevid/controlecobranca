@@ -232,6 +232,46 @@
   }
   .pdf-alert-banner svg { flex-shrink: 0; color: #e07b00; }
 
+  .filter-pending-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text);
+    cursor: pointer;
+    white-space: nowrap;
+    padding: 5px 10px;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    background: var(--card);
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    user-select: none;
+  }
+  .filter-pending-label:has(input:checked) {
+    background: #fff3e0;
+    border-color: #f0c070;
+    color: #6b3a00;
+  }
+  .filter-pending-label input { display: none; }
+
+  .btn-attach-pdf {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px 8px;
+    border-radius: 6px;
+    border: 1.5px solid var(--border);
+    background: var(--card);
+    color: var(--accent);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    font-family: var(--font-body);
+  }
+  .btn-attach-pdf:hover { background: var(--accent-light); border-color: var(--accent); }
+
+  .col-actions { white-space: nowrap; }
+
   .badge-vertical {
     display: inline-block;
     font-size: 10.5px;
@@ -482,6 +522,11 @@
       <select id="filterVertical"><option value="">Todas as verticais</option></select>
       <select id="filterClient"><option value="">Todos os clientes</option></select>
       <input type="month" id="filterMonth">
+      <label class="filter-pending-label">
+        <input type="checkbox" id="filterPending">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        PDF pendente
+      </label>
       <button class="btn-secondary" id="clearFiltersBtn">Limpar filtros</button>
       <button class="btn-secondary" id="refreshBtn">Atualizar</button>
     </div>
@@ -583,7 +628,7 @@
             <th>Valor</th>
             <th class="col-center">PDF</th>
             <th>Observações</th>
-            <th id="actionsHeader" class="hidden">Ações</th>
+            <th id="actionsHeader" class="hidden col-actions">Ações</th>
           </tr>
         </thead>
         <tbody id="entriesBody"></tbody>
@@ -614,6 +659,22 @@
     <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px;">
       <button class="btn-secondary" id="cancelDeleteBtn">Cancelar</button>
       <button class="btn-danger" id="confirmDeleteBtn">Excluir</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="attachPdfModal">
+  <div class="modal">
+    <h2 style="margin-top:0;">Anexar PDF</h2>
+    <p id="attachPdfInfo" style="font-size:13px; color:var(--text-secondary); margin:0 0 16px;"></p>
+    <div class="field">
+      <label for="attachPdfFile">Selecionar arquivo PDF</label>
+      <input type="file" id="attachPdfFile" accept="application/pdf">
+    </div>
+    <p class="status-msg" id="attachPdfStatus"></p>
+    <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px;">
+      <button class="btn-secondary" id="cancelAttachPdfBtn">Cancelar</button>
+      <button class="btn-primary" id="confirmAttachPdfBtn">Salvar PDF</button>
     </div>
   </div>
 </div>
@@ -778,7 +839,7 @@ async function uploadPdf(file, entryId) {
   });
   if (error) throw error;
   const { data } = supabaseClient.storage.from(PDF_BUCKET).getPublicUrl(path);
-  return data.publicUrl;
+  return { url: data.publicUrl, nome: file.name };
 }
 
 async function insertEntry(entry) {
@@ -849,11 +910,13 @@ function getFilteredEntries() {
   const client = document.getElementById('filterClient').value;
   const month = document.getElementById('filterMonth').value;
   const vertical = document.getElementById('filterVertical').value;
+  const pending = document.getElementById('filterPending').checked;
 
   return entries.filter(e => {
     if (vertical && e.vertical !== vertical) return false;
     if (client && e.cliente !== client) return false;
     if (month && e.mes !== month) return false;
+    if (pending && e.pdf_url) return false;
     if (search) {
       const haystack = `${e.cliente} ${e.doc || ''} ${e.obs || ''} ${e.vertical || ''}`.toLowerCase();
       if (!haystack.includes(search)) return false;
@@ -924,7 +987,12 @@ function renderTable() {
         : `<span class="pdf-missing" title="PDF não anexado"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Pendente</span>`
       }</td>
       <td style="max-width:200px; white-space:normal;">${escapeHtml(e.obs || '-')}</td>
-      ${isAdmin ? `<td class="actions"><button class="btn-secondary btn-small delete-entry-btn" data-id="${e.id}">Excluir</button></td>` : ''}
+      ${isAdmin ? `<td class="actions">
+        <button class="btn-attach-pdf btn-small" data-id="${e.id}" data-doc="${escapeHtml(e.doc || '')}" title="Anexar PDF">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+        </button>
+        <button class="btn-secondary btn-small delete-entry-btn" data-id="${e.id}">Excluir</button>
+      </td>` : ''}
     </tr>
   `).join('');
 
@@ -1586,9 +1654,9 @@ async function init() {
           throw new Error('PDF muito grande (máximo 20MB).');
         }
         const tempId = crypto.randomUUID();
-        const url = await uploadPdf(file, tempId);
+        const { url, nome } = await uploadPdf(file, tempId);
         entry.pdf_url = url;
-        entry.pdf_nome = file.name;
+        entry.pdf_nome = nome;
       }
 
       await insertEntry(entry);
@@ -1611,7 +1679,7 @@ async function init() {
     }
   });
 
-  ['filterSearch', 'filterVertical', 'filterClient', 'filterMonth'].forEach(id => {
+  ['filterSearch', 'filterVertical', 'filterClient', 'filterMonth', 'filterPending'].forEach(id => {
     document.getElementById(id).addEventListener('input', renderAll);
     document.getElementById(id).addEventListener('change', renderAll);
   });
@@ -1621,6 +1689,7 @@ async function init() {
     document.getElementById('filterVertical').value = '';
     document.getElementById('filterClient').value = '';
     document.getElementById('filterMonth').value = '';
+    document.getElementById('filterPending').checked = false;
     renderAll();
   });
 
@@ -1645,6 +1714,81 @@ async function init() {
       pendingDeleteId = null;
     }
     document.getElementById('confirmModal').classList.add('hidden');
+  });
+
+  document.getElementById('cancelDeleteBtn').addEventListener('click', () => {
+    pendingDeleteId = null;
+    document.getElementById('confirmModal').classList.add('hidden');
+  });
+
+  document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
+    if (pendingDeleteId) {
+      try {
+        await deleteEntry(pendingDeleteId);
+        await loadEntries();
+        renderAll();
+      } catch (e) {
+        alert('Erro ao excluir: ' + e.message);
+      }
+      pendingDeleteId = null;
+    }
+    document.getElementById('confirmModal').classList.add('hidden');
+  });
+
+  // ---- Modal de anexar PDF em lançamento existente ----
+  let pendingAttachId = null;
+
+  document.getElementById('entriesBody').addEventListener('click', (ev) => {
+    const btn = ev.target.closest('.btn-attach-pdf');
+    if (!btn) return;
+    pendingAttachId = btn.getAttribute('data-id');
+    const doc = btn.getAttribute('data-doc') || `lançamento #${pendingAttachId}`;
+    document.getElementById('attachPdfInfo').textContent = `Selecione o arquivo PDF para: ${doc}`;
+    document.getElementById('attachPdfFile').value = '';
+    document.getElementById('attachPdfStatus').textContent = '';
+    document.getElementById('attachPdfModal').classList.remove('hidden');
+  });
+
+  document.getElementById('cancelAttachPdfBtn').addEventListener('click', () => {
+    pendingAttachId = null;
+    document.getElementById('attachPdfModal').classList.add('hidden');
+  });
+
+  document.getElementById('confirmAttachPdfBtn').addEventListener('click', async () => {
+    const file = document.getElementById('attachPdfFile').files[0];
+    const statusEl = document.getElementById('attachPdfStatus');
+    if (!file) {
+      statusEl.textContent = 'Selecione um arquivo PDF.';
+      statusEl.className = 'status-msg error-flash';
+      return;
+    }
+    if (file.type !== 'application/pdf') {
+      statusEl.textContent = 'O arquivo precisa ser um PDF.';
+      statusEl.className = 'status-msg error-flash';
+      return;
+    }
+
+    statusEl.textContent = 'Enviando…';
+    statusEl.className = 'status-msg';
+    document.getElementById('confirmAttachPdfBtn').disabled = true;
+
+    try {
+      const { url: pdfUrl, nome: pdfNome } = await uploadPdf(file, pendingAttachId);
+      const { error } = await supabaseClient
+        .from('lancamentos')
+        .update({ pdf_url: pdfUrl, pdf_nome: pdfNome })
+        .eq('id', pendingAttachId);
+      if (error) throw error;
+
+      await loadEntries();
+      renderAll();
+      document.getElementById('attachPdfModal').classList.add('hidden');
+      pendingAttachId = null;
+    } catch (e) {
+      statusEl.textContent = 'Erro ao enviar: ' + e.message;
+      statusEl.className = 'status-msg error-flash';
+    }
+    document.getElementById('confirmAttachPdfBtn').disabled = false;
   });
 
   // Verifica se já existe sessão ativa
