@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Controle de Faturamento - Cobrança</title>
+<title>Faturamento — Meireles & Freitas</title>
 <link rel="icon" type="image/png" sizes="32x32" href="assets/brand/favicon-32.png">
 <link rel="apple-touch-icon" sizes="180x180" href="assets/brand/favicon-180.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -59,7 +59,6 @@
   .container { max-width: 1100px; margin: 0 auto; padding: 0 24px 24px; }
   h1 { font-family: var(--font-heading); font-size: 21px; font-weight: 700; margin: 0 0 4px; letter-spacing: -0.2px; }
   .subtitle { color: var(--text-secondary); font-size: 14px; margin: 0 0 24px; }
-  .login-logo { display: block; height: 46px; margin: 0 auto 14px; }
 
   h2 { font-family: var(--font-heading); font-weight: 700; color: var(--mf-teal); }
 
@@ -396,25 +395,224 @@
   }
 
   /* Tela de login */
+  /* ── Tela de login ── */
   .login-screen {
-    max-width: 380px;
-    margin: 60px auto;
-    padding: 0 20px;
+    position: fixed;
+    inset: 0;
+    display: flex;
+    background: var(--mf-teal);
+    z-index: 10;
   }
-  .login-screen .card { margin-bottom: 12px; }
+
+  /* Painel esquerdo — identidade */
+  .login-panel-brand {
+    flex: 1 1 55%;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 52px 56px;
+    overflow: hidden;
+    background: linear-gradient(145deg, #021f1f 0%, var(--mf-teal) 45%, var(--mf-verde-escuro) 100%);
+  }
+
+  /* Grade tecnológica de fundo */
+  .login-panel-brand::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(164,232,69,.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(164,232,69,.06) 1px, transparent 1px);
+    background-size: 44px 44px;
+    pointer-events: none;
+  }
+
+  /* Halo de luz */
+  .login-panel-brand::after {
+    content: '';
+    position: absolute;
+    width: 520px;
+    height: 520px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(26,148,77,.22) 0%, transparent 70%);
+    top: -120px;
+    right: -160px;
+    pointer-events: none;
+  }
+
+  .login-brand-top { position: relative; z-index: 1; }
+
+  .login-logo-large {
+    display: block;
+    height: 64px;
+    margin-bottom: 32px;
+  }
+
+  .login-brand-headline {
+    font-family: var(--font-heading);
+    font-size: clamp(28px, 3.2vw, 42px);
+    font-weight: 800;
+    line-height: 1.15;
+    color: #fff;
+    letter-spacing: -0.5px;
+    margin: 0 0 14px;
+  }
+
+  .login-brand-headline span {
+    color: var(--mf-lima);
+  }
+
+  .login-brand-sub {
+    font-size: 14px;
+    color: rgba(255,255,255,.55);
+    line-height: 1.6;
+    max-width: 340px;
+    margin: 0;
+  }
+
+  .login-brand-bottom {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .login-brand-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(164,232,69,.12);
+    border: 1px solid rgba(164,232,69,.25);
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--mf-lima);
+    letter-spacing: 0.3px;
+  }
+
+  .login-brand-badge svg { flex-shrink: 0; }
+
+  /* Painel direito — formulário */
+  .login-panel-form {
+    flex: 0 0 400px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 52px 44px;
+    background: #f6f4ec;
+    overflow-y: auto;
+  }
+
+  .login-form-title {
+    font-family: var(--font-heading);
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--mf-teal);
+    margin: 0 0 4px;
+    letter-spacing: -0.3px;
+  }
+
+  .login-form-sub {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin: 0 0 28px;
+  }
+
   .login-tabs {
     display: flex;
-    gap: 8px;
-    margin-bottom: 16px;
+    gap: 0;
+    margin-bottom: 24px;
+    border-radius: 8px;
+    background: #e3ded0;
+    padding: 3px;
   }
+
   .login-tabs button {
     flex: 1;
-    background: #ece7da;
+    background: transparent;
     color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 13px;
+    border-radius: 6px;
+    padding: 8px;
+    transition: background .2s, color .2s;
   }
+
   .login-tabs button.active {
-    background: var(--accent);
+    background: var(--mf-teal);
     color: white;
+    box-shadow: 0 1px 4px rgba(3,56,56,.18);
+  }
+
+  .login-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-bottom: 14px;
+  }
+
+  .login-field label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+
+  .login-field input {
+    padding: 11px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    background: white;
+    color: var(--text);
+    transition: border-color .15s, box-shadow .15s;
+    font-family: var(--font-body);
+  }
+
+  .login-field input:focus {
+    outline: none;
+    border-color: var(--mf-verde);
+    box-shadow: 0 0 0 3px rgba(26,148,77,.12);
+  }
+
+  .login-submit {
+    width: 100%;
+    padding: 12px;
+    background: var(--mf-teal);
+    color: white;
+    font-family: var(--font-heading);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    margin-top: 6px;
+    transition: background .15s, transform .1s;
+  }
+
+  .login-submit:hover { background: var(--mf-verde-escuro); }
+  .login-submit:active { transform: scale(.98); }
+
+  .login-hint {
+    font-size: 11.5px;
+    color: var(--text-secondary);
+    margin: 12px 0 0;
+    line-height: 1.5;
+  }
+
+  /* Mobile: empilhar */
+  @media (max-width: 700px) {
+    .login-screen { flex-direction: column; }
+    .login-panel-brand { flex: 0 0 auto; padding: 32px 28px; }
+    .login-brand-headline { font-size: 22px; }
+    .login-logo-large { height: 44px; margin-bottom: 18px; }
+    .login-brand-sub { display: none; }
+    .login-panel-form { flex: 1; padding: 32px 24px; }
   }
 
   .topbar {
@@ -449,51 +647,75 @@
 
 <!-- TELA DE LOGIN -->
 <div class="login-screen" id="loginScreen">
-  <img src="assets/brand/logo-vertical-verde-escuro.png" alt="Meireles & Freitas" class="login-logo">
-  <p class="subtitle" style="text-align:center; margin-top:-4px;">Controle de faturamento</p>
 
-  <div class="card">
+  <!-- Painel esquerdo: identidade visual -->
+  <div class="login-panel-brand">
+    <div class="login-brand-top">
+      <img src="assets/brand/logo-horizontal-creme.png" alt="Meireles & Freitas" class="login-logo-large">
+      <h1 class="login-brand-headline">
+        Gestão de<br><span>Faturamento</span><br>inteligente.
+      </h1>
+      <p class="login-brand-sub">
+        Acompanhe notas, verticais e clientes em tempo real — com controle total sobre o ciclo financeiro da operação.
+      </p>
+    </div>
+    <div class="login-brand-bottom">
+      <span class="login-brand-badge">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        Acesso restrito à equipe
+      </span>
+      <span class="login-brand-badge">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Dados criptografados
+      </span>
+    </div>
+  </div>
+
+  <!-- Painel direito: formulário -->
+  <div class="login-panel-form">
+    <p class="login-form-title">Faturamento</p>
+    <p class="login-form-sub">Entre com sua conta corporativa para continuar</p>
+
     <div class="login-tabs">
       <button class="active" id="tabLogin" type="button">Entrar</button>
       <button id="tabSignup" type="button">Criar conta</button>
     </div>
 
     <div id="loginForm">
-      <div class="field" style="margin-bottom:12px;">
+      <div class="login-field">
         <label for="loginEmail">E-mail</label>
-        <input type="email" id="loginEmail" placeholder="seu@meirelesefreitas.com.br" autocomplete="username">
+        <input type="email" id="loginEmail" placeholder="voce@meirelesefreitas.com.br" autocomplete="username">
       </div>
-      <div class="field" style="margin-bottom:12px;">
+      <div class="login-field">
         <label for="loginPassword">Senha</label>
-        <input type="password" id="loginPassword" placeholder="Sua senha" autocomplete="current-password">
+        <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
       </div>
-      <button class="btn-primary" id="loginBtn" style="width:100%;">Entrar</button>
+      <button class="login-submit" id="loginBtn">Entrar</button>
     </div>
 
     <div id="signupForm" class="hidden">
-      <div class="field" style="margin-bottom:12px;">
+      <div class="login-field">
         <label for="signupEmail">E-mail corporativo</label>
         <input type="email" id="signupEmail" placeholder="voce@meirelesefreitas.com.br" autocomplete="username">
       </div>
-      <div class="field" style="margin-bottom:12px;">
+      <div class="login-field">
         <label for="signupPassword">Crie uma senha</label>
         <input type="password" id="signupPassword" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
       </div>
-      <button class="btn-primary" id="signupBtn" style="width:100%;">Criar conta</button>
-      <p style="font-size:12px; color:var(--text-secondary); margin:10px 0 0;">
-        Disponível apenas para e-mails @meirelesefreitas.com.br. Novas contas começam com acesso de visualização.
-      </p>
+      <button class="login-submit" id="signupBtn">Criar conta</button>
+      <p class="login-hint">Disponível apenas para @meirelesefreitas.com.br. Novas contas começam como visualização.</p>
     </div>
 
-    <p class="status-msg" id="loginStatus"></p>
+    <p class="status-msg" id="loginStatus" style="margin-top:14px;"></p>
   </div>
+
 </div>
 
 <!-- APP PRINCIPAL -->
 <div class="container hidden" id="appScreen">
   <div class="topbar">
     <div>
-      <h1>Controle de faturamento - Cobrança</h1>
+      <h1>Faturamento</h1>
       <p class="subtitle" style="margin:0;">Registro mensal de faturamento por cliente</p>
     </div>
     <div class="user-info">
