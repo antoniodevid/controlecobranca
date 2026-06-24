@@ -883,6 +883,12 @@
         <select id="entryClient"></select>
       </div>
       <div class="field">
+        <label for="entryVertical">Vertical</label>
+        <select id="entryVertical">
+          <option value="">Selecione a vertical...</option>
+        </select>
+      </div>
+      <div class="field">
         <label for="entryMonth">Mês de referência</label>
         <input type="month" id="entryMonth">
       </div>
@@ -1187,6 +1193,7 @@ async function deleteEntry(id) {
 
 function renderClientsDropdowns() {
   const entrySel = document.getElementById('entryClient');
+  const entryVerticalSel = document.getElementById('entryVertical');
   const filterSel = document.getElementById('filterClient');
   const verticalSel = document.getElementById('filterVertical');
   const prevEntry = entrySel.value;
@@ -1200,8 +1207,9 @@ function renderClientsDropdowns() {
 
   // Verticais distintas dos lançamentos carregados
   const verticais = [...new Set(entries.map(e => e.vertical).filter(Boolean))].sort();
-  verticalSel.innerHTML = '<option value="">Todas as verticais</option>' +
-    verticais.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+  const verticalOptions = verticais.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+  verticalSel.innerHTML = '<option value="">Todas as verticais</option>' + verticalOptions;
+  entryVerticalSel.innerHTML = '<option value="">Selecione a vertical...</option>' + verticalOptions;
 
   if (clients.includes(prevEntry)) entrySel.value = prevEntry;
   if (clients.includes(prevFilter)) filterSel.value = prevFilter;
@@ -1990,6 +1998,14 @@ async function init() {
   document.getElementById('exportTxtBtn').addEventListener('click', exportTxt);
 
   // ── Toggle da base de lançamentos ──
+  document.getElementById('entryClient').addEventListener('change', (ev) => {
+    const clientName = ev.target.value;
+    const clientData = clientsData.find(c => c.nome === clientName);
+    if (clientData?.vertical) {
+      document.getElementById('entryVertical').value = clientData.vertical;
+    }
+  });
+
   document.getElementById('entriesToggle').addEventListener('click', () => {
     document.getElementById('entriesCard').classList.toggle('is-open');
   });
@@ -2024,6 +2040,7 @@ async function init() {
 
   document.getElementById('saveEntryBtn').addEventListener('click', async () => {
     const client = document.getElementById('entryClient').value;
+    const vertical = document.getElementById('entryVertical').value;
     const month = document.getElementById('entryMonth').value;
     const faturou = 'sim';
     const doc = document.getElementById('entryDoc').value.trim();
@@ -2053,6 +2070,7 @@ async function init() {
         cliente: client,
         mes: month,
         faturou,
+        vertical: vertical || null,
         doc: faturou === 'sim' ? doc : '',
         valor: faturou === 'sim' ? (parseFloat(valorRaw) || 0) : 0,
         obs,
@@ -2076,6 +2094,7 @@ async function init() {
       document.getElementById('entryDoc').value = '';
       document.getElementById('entryValor').value = '';
       document.getElementById('entryObs').value = '';
+      document.getElementById('entryVertical').value = '';
       fileInput.value = '';
 
       await loadEntries();
