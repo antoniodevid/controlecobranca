@@ -198,8 +198,11 @@
   .col-center { text-align: center; }
   .charts-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
     gap: 28px;
+  }
+  @media (max-width: 700px) {
+    .charts-grid { grid-template-columns: 1fr; }
   }
   .chart-subtitle {
     font-size: 11.5px;
@@ -212,8 +215,100 @@
   .chart-wrap { overflow-x: auto; }
   .chart-inner { height: 260px; min-width: 100%; }
   .chart-inner canvas { display: block; }
-  .chart-wrap-v { overflow-y: auto; max-height: 480px; }
+  .chart-wrap-v { overflow-y: auto; max-height: 320px; }
   .chart-inner-v { min-height: 260px; width: 100%; }
+
+  /* ── Curva ABC ── */
+  .abc-donut-wrap {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .abc-canvas-container {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    flex-shrink: 0;
+  }
+  .abc-center-label {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+  .abc-center-value {
+    font-family: var(--font-heading);
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--mf-teal);
+    line-height: 1;
+  }
+  .abc-center-sub {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-top: 3px;
+  }
+  .abc-legend {
+    display: flex;
+    gap: 16px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .abc-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    cursor: pointer;
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1.5px solid transparent;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .abc-legend-item:hover { background: #f0f0e8; border-color: var(--border); }
+  .abc-legend-item.active { background: var(--accent-light); border-color: var(--accent); }
+  .abc-legend-dot {
+    width: 11px;
+    height: 11px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+  .abc-legend-group { font-size: 13px; font-weight: 800; }
+
+  /* ── Badge ABC na tabela ── */
+  .badge-abc {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 5px;
+    font-size: 11.5px;
+    font-weight: 800;
+    letter-spacing: 0;
+  }
+  .badge-abc-A { background: #d1fae5; color: #065f46; }
+  .badge-abc-B { background: #fef3c7; color: #92400e; }
+  .badge-abc-C { background: #fee2e2; color: #991b1b; }
+
+  /* ── Modal ABC ── */
+  .abc-modal-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 12px; }
+  .abc-modal-table th { color: var(--mf-teal); font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.4px; padding: 6px 8px; border-bottom: 2px solid var(--border); }
+  .abc-modal-table td { padding: 8px 8px; border-bottom: 1px solid var(--border); }
+  .abc-modal-table tbody tr:hover td { background: #f7f9f4; }
+  .abc-modal-share { font-size: 11px; color: var(--text-secondary); font-weight: 600; }
 
   .pdf-alert-banner {
     display: flex;
@@ -856,6 +951,35 @@
         <div class="chart-subtitle">Faturado por vertical</div>
         <div class="chart-wrap-v"><div class="chart-inner-v" id="chartVerticalInner"><canvas id="chartVertical"></canvas></div></div>
       </div>
+      <div>
+        <div class="chart-subtitle">Curva ABC de clientes</div>
+        <div class="abc-donut-wrap" id="abcDonutWrap">
+          <div class="abc-canvas-container">
+            <canvas id="chartAbc" width="200" height="200"></canvas>
+            <div class="abc-center-label">
+              <span class="abc-center-value" id="abcCenterValue">—</span>
+              <span class="abc-center-sub">faturado</span>
+            </div>
+          </div>
+          <div class="abc-legend" id="abcLegend">
+            <div class="abc-legend-item" data-group="A" title="Clique para ver clientes do grupo A">
+              <span class="abc-legend-dot" style="background:#1a944d;"></span>
+              <span class="abc-legend-group">A</span>
+              <span id="abcLegendA">75%</span>
+            </div>
+            <div class="abc-legend-item" data-group="B" title="Clique para ver clientes do grupo B">
+              <span class="abc-legend-dot" style="background:#a4e845;"></span>
+              <span class="abc-legend-group">B</span>
+              <span id="abcLegendB">20%</span>
+            </div>
+            <div class="abc-legend-item" data-group="C" title="Clique para ver clientes do grupo C">
+              <span class="abc-legend-dot" style="background:#e3ded0;"></span>
+              <span class="abc-legend-group">C</span>
+              <span id="abcLegendC">5%</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
     <p class="empty-state hidden" id="chartsEmpty">Nenhum valor faturado para exibir no filtro atual.</p>
   </div>
@@ -945,6 +1069,7 @@
             <tr>
               <th>Vertical</th>
               <th>Cliente</th>
+              <th class="col-center">ABC</th>
               <th>Mês</th>
               <th>Nº Documento</th>
               <th>Valor</th>
@@ -979,6 +1104,23 @@
     <a href="mailto:antoniodevid@meirelesefreitas.com.br">antoniodevid@meirelesefreitas.com.br</a>
   </footer>
 
+</div>
+
+<!-- Modal de detalhe do grupo ABC -->
+<div class="modal-overlay hidden" id="abcModal">
+  <div class="modal" style="max-width:560px; width:94%;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+      <h2 style="margin:0;" id="abcModalTitle">Grupo A — Clientes</h2>
+      <button class="btn-secondary btn-small" id="closeAbcModal" style="flex-shrink:0;">Fechar</button>
+    </div>
+    <p style="font-size:12px; color:var(--text-secondary); margin:0 0 4px;" id="abcModalDesc"></p>
+    <div class="table-wrap">
+      <table class="abc-modal-table">
+        <thead><tr><th>#</th><th>Cliente</th><th>Faturado</th><th class="abc-modal-share">% do total</th><th>% acum.</th></tr></thead>
+        <tbody id="abcModalBody"></tbody>
+      </table>
+    </div>
+  </div>
 </div>
 
 <div class="modal-overlay hidden" id="confirmModal">
@@ -1036,7 +1178,8 @@ let currentUser = null;
 let monthChart = null;
 let clientChart = null;
 let verticalChart = null;
-let accessLog = [];
+let abcChart = null;
+let abcData = { A: [], B: [], C: [], total: 0 }; // cache do último cálculo
 
 function isConfigured() {
   return SUPABASE_URL && SUPABASE_URL !== 'COLOQUE_SUA_URL_AQUI' &&
@@ -1052,6 +1195,42 @@ function fmtMonth(m) {
   const [y, mo] = m.split('-');
   const meses = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
   return `${meses[parseInt(mo,10)-1]}/${y}`;
+}
+
+function fmtShort(v) {
+  if (v >= 1e9) return `R$ ${(v / 1e9).toFixed(1).replace('.',',')}B`;
+  if (v >= 1e6) return `R$ ${(v / 1e6).toFixed(1).replace('.',',')}M`;
+  if (v >= 1e3) return `R$ ${(v / 1e3).toFixed(0)}K`;
+  return `R$ ${v.toFixed(0)}`;
+}
+
+// Calcula curva ABC 75/20/5 com base nos entries filtrados.
+// Retorna { A: [{cliente, valor, pct, pctAcum}], B: [...], C: [...], total }
+function computeABC(filtered) {
+  const map = {};
+  filtered.forEach(e => {
+    map[e.cliente] = (map[e.cliente] || 0) + (parseFloat(e.valor) || 0);
+  });
+  const total = Object.values(map).reduce((s, v) => s + v, 0);
+  if (total === 0) return { A: [], B: [], C: [], total: 0 };
+
+  const sorted = Object.entries(map)
+    .map(([cliente, valor]) => ({ cliente, valor, pct: valor / total * 100 }))
+    .sort((a, b) => b.valor - a.valor);
+
+  let acum = 0;
+  const groups = { A: [], B: [], C: [] };
+  sorted.forEach(item => {
+    acum += item.pct;
+    item.pctAcum = acum;
+    if (acum <= 75 + 0.001) groups.A.push(item);
+    else if (acum <= 95 + 0.001) groups.B.push(item);
+    else groups.C.push(item);
+  });
+  // Garantir que ao menos 1 cliente sempre caia em A (borda exata de 75)
+  if (groups.A.length === 0 && sorted.length > 0) groups.A.push(sorted[0]);
+
+  return { ...groups, total };
 }
 
 function escapeHtml(str) {
@@ -1309,6 +1488,11 @@ function renderTable() {
     return a.cliente.localeCompare(b.cliente);
   });
 
+  // Mapa cliente → grupo ABC (calculado sobre os entries filtrados)
+  const abc = computeABC(filtered);
+  const clientAbcMap = {};
+  ['A', 'B', 'C'].forEach(g => (abc[g] || []).forEach(item => { clientAbcMap[item.cliente] = g; }));
+
   // Atualiza contador no cabeçalho do card recolhível
   const countLabel = document.getElementById('entriesCount');
   if (countLabel) {
@@ -1337,10 +1521,16 @@ function renderTable() {
   }
   emptyState.classList.add('hidden');
 
-  tbody.innerHTML = filtered.map(e => `
+  tbody.innerHTML = filtered.map(e => {
+    const abcGroup = clientAbcMap[e.cliente] || '—';
+    const abcBadge = abcGroup !== '—'
+      ? `<span class="badge-abc badge-abc-${abcGroup}" title="Curva ABC: Grupo ${abcGroup}">${abcGroup}</span>`
+      : `<span style="color:var(--text-secondary); font-size:12px;">—</span>`;
+    return `
     <tr class="${!e.pdf_url ? 'row-pdf-missing' : ''}">
       <td>${e.vertical ? `<span class="badge-vertical">${escapeHtml(e.vertical)}</span>` : '<span class="pdf-icon-empty">-</span>'}</td>
       <td>${escapeHtml(e.cliente)}</td>
+      <td class="col-center">${abcBadge}</td>
       <td>${fmtMonth(e.mes)}</td>
       <td>${escapeHtml(e.doc || '-')}</td>
       <td>${fmtCurrency(e.valor)}</td>
@@ -1355,8 +1545,8 @@ function renderTable() {
         </button>
         <button class="btn-secondary btn-small delete-entry-btn" data-id="${e.id}">Excluir</button>
       </td>` : ''}
-    </tr>
-  `).join('');
+    </tr>`;
+  }).join('');
 
   if (isAdmin) {
     tbody.querySelectorAll('.delete-entry-btn').forEach(btn => {
@@ -1628,6 +1818,109 @@ function renderCharts() {
   }
 }
 
+function renderAbcChart() {
+  if (typeof Chart === 'undefined') return;
+
+  const filtered = getFilteredEntries();
+  const abc = computeABC(filtered);
+  abcData = abc;
+
+  // Atualiza valor central
+  document.getElementById('abcCenterValue').textContent =
+    abc.total > 0 ? fmtShort(abc.total) : '—';
+
+  // Percentuais reais de cada grupo
+  const sumGroup = grp => grp.reduce((s, i) => s + i.valor, 0);
+  const vA = sumGroup(abc.A), vB = sumGroup(abc.B), vC = sumGroup(abc.C);
+  const pA = abc.total > 0 ? (vA / abc.total * 100).toFixed(1) : '0';
+  const pB = abc.total > 0 ? (vB / abc.total * 100).toFixed(1) : '0';
+  const pC = abc.total > 0 ? (vC / abc.total * 100).toFixed(1) : '0';
+
+  document.getElementById('abcLegendA').textContent = `${pA}% · ${abc.A.length} cliente${abc.A.length !== 1 ? 's' : ''}`;
+  document.getElementById('abcLegendB').textContent = `${pB}% · ${abc.B.length} cliente${abc.B.length !== 1 ? 's' : ''}`;
+  document.getElementById('abcLegendC').textContent = `${pC}% · ${abc.C.length} cliente${abc.C.length !== 1 ? 's' : ''}`;
+
+  const chartData = [vA || 0.001, vB || 0.001, vC || 0.001];
+  const noRealData = abc.total === 0;
+
+  if (abcChart) {
+    abcChart.data.datasets[0].data = noRealData ? [1, 1, 1] : chartData;
+    abcChart.data.datasets[0].backgroundColor = noRealData
+      ? ['#e3ded0', '#e3ded0', '#e3ded0']
+      : ['#1a944d', '#a4e845', '#e3ded0'];
+    abcChart.update();
+  } else {
+    abcChart = new Chart(document.getElementById('chartAbc').getContext('2d'), {
+      type: 'doughnut',
+      data: {
+        labels: ['A', 'B', 'C'],
+        datasets: [{
+          data: noRealData ? [1, 1, 1] : chartData,
+          backgroundColor: noRealData ? ['#e3ded0', '#e3ded0', '#e3ded0'] : ['#1a944d', '#a4e845', '#e3ded0'],
+          hoverBackgroundColor: ['#0a543d', '#7bbf1a', '#c8c2b4'],
+          borderWidth: 3,
+          borderColor: '#ffffff',
+          hoverOffset: 6
+        }]
+      },
+      options: {
+        responsive: false,
+        cutout: '68%',
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            enabled: !noRealData,
+            callbacks: {
+              label: (ctx) => {
+                const g = ['A', 'B', 'C'][ctx.dataIndex];
+                const grp = abcData[g] || [];
+                const val = grp.reduce((s, i) => s + i.valor, 0);
+                const pct = abcData.total > 0 ? (val / abcData.total * 100).toFixed(1) : '0';
+                return ` ${fmtCurrency(val)} (${pct}%)`;
+              },
+              afterLabel: () => 'Clique para ver clientes'
+            }
+          }
+        },
+        onClick(event, elements) {
+          if (!elements.length || noRealData) return;
+          const g = ['A', 'B', 'C'][elements[0].index];
+          openAbcModal(g);
+        }
+      }
+    });
+    document.getElementById('chartAbc').style.cursor = 'pointer';
+  }
+}
+
+function openAbcModal(group) {
+  const grp = abcData[group] || [];
+  const colors = { A: '#1a944d', B: '#a4e845', C: '#aaaaaa' };
+  const labels = { A: 'Grupo A — Clientes estratégicos (75% do faturamento)', B: 'Grupo B — Clientes intermediários (20%)', C: 'Grupo C — Demais clientes (5%)' };
+
+  document.getElementById('abcModalTitle').textContent = `Grupo ${group} — ${grp.length} cliente${grp.length !== 1 ? 's' : ''}`;
+  document.getElementById('abcModalDesc').textContent = labels[group];
+
+  const totalGrp = grp.reduce((s, i) => s + i.valor, 0);
+  const tbody = document.getElementById('abcModalBody');
+  tbody.innerHTML = grp.map((item, idx) => `
+    <tr>
+      <td style="color:var(--text-secondary); font-size:11px;">${idx + 1}</td>
+      <td><strong>${escapeHtml(item.cliente)}</strong></td>
+      <td>${fmtCurrency(item.valor)}</td>
+      <td class="abc-modal-share">${item.pct.toFixed(1)}%</td>
+      <td class="abc-modal-share">${item.pctAcum.toFixed(1)}%</td>
+    </tr>
+  `).join('');
+
+  // Ativa visual na legenda
+  document.querySelectorAll('.abc-legend-item').forEach(el => {
+    el.classList.toggle('active', el.getAttribute('data-group') === group);
+  });
+
+  document.getElementById('abcModal').classList.remove('hidden');
+}
+
 function renderAccessLog() {
   if (currentRole !== 'admin') return;
   const tbody = document.getElementById('accessLogBody');
@@ -1758,6 +2051,7 @@ function renderAll() {
   renderClientsList();
   renderMetrics();
   renderCharts();
+  renderAbcChart();
   renderTable();
   renderAccessLog();
 }
@@ -2014,6 +2308,26 @@ async function init() {
   document.getElementById('exportCsvBtn').addEventListener('click', exportCsv);
   document.getElementById('exportPdfBtn').addEventListener('click', exportPdf);
   document.getElementById('exportTxtBtn').addEventListener('click', exportTxt);
+
+  // ── Curva ABC: legenda clicável e modal ──
+  document.querySelectorAll('.abc-legend-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const g = item.getAttribute('data-group');
+      openAbcModal(g);
+    });
+  });
+
+  document.getElementById('closeAbcModal').addEventListener('click', () => {
+    document.getElementById('abcModal').classList.add('hidden');
+    document.querySelectorAll('.abc-legend-item').forEach(el => el.classList.remove('active'));
+  });
+
+  document.getElementById('abcModal').addEventListener('click', (ev) => {
+    if (ev.target === document.getElementById('abcModal')) {
+      document.getElementById('abcModal').classList.add('hidden');
+      document.querySelectorAll('.abc-legend-item').forEach(el => el.classList.remove('active'));
+    }
+  });
 
   // ── Toggle da base de lançamentos ──
   document.getElementById('entryClient').addEventListener('change', (ev) => {
