@@ -1857,7 +1857,8 @@ async function loadEntries() {
   const { data, error } = await supabaseClient
     .from('lancamentos')
     .select('*')
-    .order('mes', { ascending: false });
+    .order('mes', { ascending: false })
+    .limit(50000);
   if (error) throw error;
   entries = data || [];
 }
