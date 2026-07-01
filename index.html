@@ -201,6 +201,9 @@
     grid-template-columns: repeat(2, 1fr);
     gap: 28px;
   }
+  @media (max-width: 860px) {
+    .charts-grid { grid-template-columns: 1fr; }
+  }
   @media (max-width: 700px) {
     .charts-grid { grid-template-columns: 1fr; }
   }
@@ -1113,6 +1116,108 @@
   }
 
   /* ══════════════════════════════════════
+     TOASTS (notificações padronizadas)
+  ══════════════════════════════════════ */
+  .toast-stack {
+    position: fixed;
+    top: 18px;
+    right: 18px;
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 360px;
+    width: calc(100% - 36px);
+  }
+  .toast {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: 10px;
+    padding: 12px 14px;
+    box-shadow: 0 10px 30px rgba(3,56,56,.14), 0 2px 8px rgba(3,56,56,.08);
+    font-size: 13px;
+    color: var(--text);
+    animation: toastIn .22s cubic-bezier(.34,1.3,.64,1);
+  }
+  .toast.toast-error { border-left-color: var(--danger); }
+  .toast.toast-success { border-left-color: var(--success); }
+  .toast.toast-warning { border-left-color: #e07b00; }
+  .toast.toast-leaving { animation: toastOut .18s ease forwards; }
+  .toast svg { flex-shrink: 0; margin-top: 1px; }
+  .toast-error svg { color: var(--danger); }
+  .toast-success svg { color: var(--success); }
+  .toast-warning svg { color: #e07b00; }
+  .toast-info svg { color: var(--accent); }
+  .toast-body { flex: 1; line-height: 1.4; }
+  .toast-close {
+    background: none; border: none; padding: 0; margin: 0;
+    color: var(--text-secondary); cursor: pointer; font-size: 15px;
+    line-height: 1; flex-shrink: 0;
+  }
+  .toast-close:hover { color: var(--text); opacity: 1; }
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateX(24px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes toastOut {
+    from { opacity: 1; transform: translateX(0); }
+    to   { opacity: 0; transform: translateX(24px); }
+  }
+  @media (max-width: 480px) {
+    .toast-stack { left: 12px; right: 12px; top: 12px; max-width: none; width: auto; }
+  }
+
+  /* ══════════════════════════════════════
+     SKELETON LOADING
+  ══════════════════════════════════════ */
+  .skeleton {
+    position: relative;
+    overflow: hidden;
+    background: #ece7da;
+    border-radius: 6px;
+  }
+  .skeleton::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.55), transparent);
+    animation: skeletonShimmer 1.3s ease-in-out infinite;
+  }
+  @keyframes skeletonShimmer {
+    100% { transform: translateX(100%); }
+  }
+  .skeleton-metric .label { width: 60%; height: 11px; margin-bottom: 8px; }
+  .skeleton-metric .value { width: 80%; height: 20px; }
+  .skeleton-row td { padding: 12px 8px; }
+  .skeleton-cell { height: 13px; width: 70%; }
+
+  /* ══════════════════════════════════════
+     COBERTURA DE DADOS / ÚLTIMA SINCRONIZAÇÃO
+  ══════════════════════════════════════ */
+  .data-coverage-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 18px;
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    margin: -6px 0 16px;
+    padding: 0 2px;
+  }
+  .data-coverage-bar:empty { display: none; }
+  .coverage-item { display: flex; align-items: center; gap: 6px; }
+  .coverage-item svg { flex-shrink: 0; }
+  .coverage-complete svg { color: var(--success); }
+  .coverage-incomplete { color: #a05a00; }
+  .coverage-incomplete svg { color: #e07b00; }
+  .coverage-incomplete strong { font-weight: 700; }
+
+  /* ══════════════════════════════════════
      BOTÕES
   ══════════════════════════════════════ */
   button {
@@ -1318,6 +1423,7 @@
 </style>
 </head>
 <body>
+<div class="toast-stack" id="toastStack" aria-live="polite" aria-atomic="false"></div>
 
 <header class="app-header" id="appHeaderEl">
   <div class="app-header-inner">
@@ -1445,6 +1551,8 @@
     <span id="pdfAlertText"></span>
   </div>
 
+  <div class="data-coverage-bar" id="dataCoverageBar"></div>
+
   <div class="metrics" id="metrics"></div>
 
   <div class="card" id="filterCard">
@@ -1568,14 +1676,14 @@
   </div>
 
   <div class="card card-collapsible" id="entriesCard">
-    <div class="card-toggle" id="entriesToggle">
+    <div class="card-toggle" id="entriesToggle" role="button" tabindex="0" aria-expanded="false" aria-controls="entriesCardBody">
       <h2>Base de lançamentos</h2>
       <div class="toggle-meta">
         <span class="toggle-count" id="entriesCount">0 registros</span>
         <svg class="toggle-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
       </div>
     </div>
-    <div class="card-body">
+    <div class="card-body" id="entriesCardBody">
       <div class="export-bar">
         <span>Exportar:</span>
         <button class="btn-export" id="exportCsvBtn" title="Exportar como planilha CSV">
@@ -1636,7 +1744,7 @@
 
 <!-- Modal de detalhe do grupo ABC -->
 <div class="modal-overlay hidden" id="abcModal">
-  <div class="modal" style="max-width:560px; width:94%;">
+  <div class="modal" style="max-width:560px; width:94%;" role="dialog" aria-modal="true" aria-labelledby="abcModalTitle">
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
       <h2 style="margin:0;" id="abcModalTitle">Grupo A — Clientes</h2>
       <button class="btn-secondary btn-small" id="closeAbcModal" style="flex-shrink:0;">Fechar</button>
@@ -1652,8 +1760,8 @@
 </div>
 
 <div class="modal-overlay hidden" id="confirmModal">
-  <div class="modal">
-    <h2 style="margin-top:0;">Confirmar exclusão</h2>
+  <div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="confirmModalTitle" aria-describedby="confirmText">
+    <h2 style="margin-top:0;" id="confirmModalTitle">Confirmar exclusão</h2>
     <p id="confirmText" style="font-size:14px; color: var(--text-secondary);">Tem certeza que deseja excluir este lançamento?</p>
     <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:16px;">
       <button class="btn-secondary" id="cancelDeleteBtn">Cancelar</button>
@@ -1663,8 +1771,8 @@
 </div>
 
 <div class="modal-overlay hidden" id="attachPdfModal">
-  <div class="modal">
-    <h2 style="margin-top:0;">Anexar PDF</h2>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="attachPdfModalTitle">
+    <h2 style="margin-top:0;" id="attachPdfModalTitle">Anexar PDF</h2>
     <p id="attachPdfInfo" style="font-size:13px; color:var(--text-secondary); margin:0 0 16px;"></p>
     <div class="field">
       <label for="attachPdfFile">Selecionar arquivo PDF</label>
@@ -1708,6 +1816,7 @@ let clientChart = null;
 let verticalChart = null;
 let abcChart = null;
 let abcData = { A: [], B: [], C: [], total: 0 }; // cache do último cálculo
+let lastSyncTime = null; // Date do último carregamento bem-sucedido dos dados
 
 function isConfigured() {
   return SUPABASE_URL && SUPABASE_URL !== 'COLOQUE_SUA_URL_AQUI' &&
@@ -1765,6 +1874,115 @@ function escapeHtml(str) {
   const div = document.createElement('div');
   div.textContent = str || '';
   return div.innerHTML;
+}
+
+/* ---------- Cobertura de dados / transparência da base ---------- */
+
+// Verifica, para o ano corrente, quais meses (até o mês atual) já têm
+// lançamentos na base. Ajuda a sinalizar transparentemente furos na base
+// em vez de deixar o usuário descobrir sozinho que um mês está vazio.
+function computeDataCoverage() {
+  const mesesNomes = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const now = new Date();
+  const year = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+  const present = new Set(entries.filter(e => e.mes && e.mes.startsWith(String(year))).map(e => e.mes));
+  const missing = [];
+  for (let m = 1; m <= currentMonth; m++) {
+    const key = `${year}-${String(m).padStart(2, '0')}`;
+    if (!present.has(key)) missing.push(mesesNomes[m - 1]);
+  }
+  return { year, totalMonths: currentMonth, covered: currentMonth - missing.length, missing };
+}
+
+function renderDataCoverage() {
+  const bar = document.getElementById('dataCoverageBar');
+  if (!bar) return;
+  const cov = computeDataCoverage();
+  const syncText = lastSyncTime
+    ? `Sincronizado às ${lastSyncTime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
+    : '';
+  const syncItem = syncText ? `
+    <span class="coverage-item">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      ${syncText}
+    </span>` : '';
+
+  let coverageItem;
+  if (cov.missing.length === 0) {
+    coverageItem = `
+      <span class="coverage-item coverage-complete">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+        Base ${cov.year} completa até o mês atual
+      </span>`;
+  } else {
+    coverageItem = `
+      <span class="coverage-item coverage-incomplete" title="Meses de ${cov.year} ainda sem lançamentos na base: ${cov.missing.join(', ')}">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+        Base ${cov.year}: <strong>${cov.covered}/${cov.totalMonths}</strong> meses carregados — faltam ${cov.missing.join(', ')}
+      </span>`;
+  }
+  bar.innerHTML = `${coverageItem}${syncItem}`;
+}
+
+/* ---------- Notificações (toast) ---------- */
+
+const TOAST_ICONS = {
+  error: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+  success: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>',
+  warning: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>',
+  info: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>'
+};
+
+// Mostra uma notificação padronizada no canto da tela.
+// type: 'error' | 'success' | 'warning' | 'info'
+function showToast(message, type = 'info', duration = 5000) {
+  const stack = document.getElementById('toastStack');
+  if (!stack) return;
+  const el = document.createElement('div');
+  el.className = `toast toast-${type}`;
+  el.setAttribute('role', type === 'error' ? 'alert' : 'status');
+  el.innerHTML = `${TOAST_ICONS[type] || TOAST_ICONS.info}<span class="toast-body"></span><button class="toast-close" aria-label="Fechar notificação">&times;</button>`;
+  el.querySelector('.toast-body').textContent = message;
+  const remove = () => {
+    el.classList.add('toast-leaving');
+    setTimeout(() => el.remove(), 180);
+  };
+  el.querySelector('.toast-close').addEventListener('click', remove);
+  stack.appendChild(el);
+  if (duration) setTimeout(remove, duration);
+}
+
+// Registra o erro técnico no console (para depuração) e retorna/mostra
+// uma mensagem amigável ao usuário, sem expor detalhes internos do Supabase.
+function friendlyError(context, e) {
+  console.error(`[${context}]`, e);
+  const msg = `${context}. Se o problema persistir, avise o administrador.`;
+  showToast(msg, 'error');
+  return msg;
+}
+
+/* ---------- Estado de carregamento (skeleton) ---------- */
+
+function showSkeletons() {
+  const metrics = document.getElementById('metrics');
+  if (metrics) {
+    metrics.innerHTML = Array(3).fill(0).map(() => `
+      <div class="metric skeleton-metric">
+        <div class="skeleton label"></div>
+        <div class="skeleton value"></div>
+      </div>
+    `).join('');
+  }
+  const tbody = document.getElementById('entriesBody');
+  if (tbody) {
+    const cols = 8;
+    tbody.innerHTML = Array(6).fill(0).map(() => `
+      <tr class="skeleton-row">
+        ${Array(cols).fill(0).map(() => `<td><div class="skeleton skeleton-cell"></div></td>`).join('')}
+      </tr>
+    `).join('');
+  }
 }
 
 /* ---------- Autenticação ---------- */
@@ -1981,7 +2199,7 @@ function renderClientsList() {
         renderClientsDropdowns();
         renderClientsList();
       } catch (e) {
-        alert('Erro ao remover cliente: ' + e.message);
+        friendlyError('Erro ao remover cliente', e);
       }
     });
   });
@@ -2523,7 +2741,7 @@ function exportFilename(ext) {
 
 function exportCsv() {
   const rows = exportRows();
-  if (!rows.length) { alert('Nenhum lançamento para exportar com o filtro atual.'); return; }
+  if (!rows.length) { showToast('Nenhum lançamento para exportar com o filtro atual.', 'warning'); return; }
   const escape = v => `"${String(v).replace(/"/g, '""')}"`;
   const lines = [
     EXPORT_HEADERS.map(escape).join(';'),
@@ -2534,7 +2752,7 @@ function exportCsv() {
 
 function exportTxt() {
   const rows = exportRows();
-  if (!rows.length) { alert('Nenhum lançamento para exportar com o filtro atual.'); return; }
+  if (!rows.length) { showToast('Nenhum lançamento para exportar com o filtro atual.', 'warning'); return; }
   const COL = [30, 30, 10, 18, 16, 30];
   const pad = (s, n) => String(s).substring(0, n).padEnd(n);
   const separator = COL.map(n => '-'.repeat(n)).join('  ');
@@ -2558,7 +2776,7 @@ function exportTxt() {
 
 function exportPdf() {
   const rows = exportRows();
-  if (!rows.length) { alert('Nenhum lançamento para exportar com o filtro atual.'); return; }
+  if (!rows.length) { showToast('Nenhum lançamento para exportar com o filtro atual.', 'warning'); return; }
   const total = rows.reduce((s, r) => s + parseFloat(r.valor.replace(',', '.')) || 0, 0);
   const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   const tr = r => `<tr>
@@ -2603,6 +2821,7 @@ function exportPdf() {
 }
 
 function renderAll() {
+  renderDataCoverage();
   renderClientsDropdowns();
   renderClientsList();
   renderMetrics();
@@ -2615,16 +2834,22 @@ function renderAll() {
 /* ---------- Inicialização ---------- */
 
 async function refreshAll(statusEl) {
+  showSkeletons();
   try {
     const tasks = [loadClients(), loadEntries()];
     if (currentRole === 'admin') tasks.push(loadAccessLog());
     await Promise.all(tasks);
+    lastSyncTime = new Date();
     renderAll();
   } catch (e) {
+    friendlyError('Erro ao carregar dados', e);
     if (statusEl) {
-      statusEl.textContent = 'Erro ao carregar dados: ' + e.message;
+      statusEl.textContent = 'Não foi possível carregar os dados. Tente novamente.';
       statusEl.className = 'status-msg error-flash';
     }
+    // Remove o skeleton mesmo em caso de erro, para não deixar a tela travada
+    document.getElementById('metrics').innerHTML = '';
+    document.getElementById('entriesBody').innerHTML = `<tr><td colspan="9" class="empty-state">Não foi possível carregar os lançamentos.</td></tr>`;
   }
 }
 
@@ -2701,7 +2926,8 @@ async function init() {
       }
     });
   } catch (e) {
-    document.getElementById('loginStatus').textContent = 'Erro ao iniciar conexão: ' + e.message;
+    console.error('[Erro ao iniciar conexão]', e);
+    document.getElementById('loginStatus').textContent = 'Não foi possível iniciar a conexão com o servidor. Recarregue a página.';
     return;
   }
 
@@ -2798,6 +3024,7 @@ async function init() {
         document.getElementById('loginEmail').value = email;
       }
     } catch (e) {
+      console.error('[Erro ao criar conta]', e);
       statusEl.textContent = 'Erro ao criar conta: ' + e.message;
       statusEl.className = 'status-msg error-flash';
     }
@@ -2852,6 +3079,7 @@ async function init() {
       statusEl.textContent = `Link enviado para ${email}. Verifique sua caixa de entrada.`;
       statusEl.className = 'status-msg';
     } catch (e) {
+      console.error('[Erro ao enviar link de redefinição]', e);
       statusEl.textContent = 'Erro ao enviar: ' + e.message;
       statusEl.className = 'status-msg error-flash';
     }
@@ -2895,7 +3123,16 @@ async function init() {
   });
 
   document.getElementById('entriesToggle').addEventListener('click', () => {
-    document.getElementById('entriesCard').classList.toggle('is-open');
+    const card = document.getElementById('entriesCard');
+    const toggle = document.getElementById('entriesToggle');
+    card.classList.toggle('is-open');
+    toggle.setAttribute('aria-expanded', card.classList.contains('is-open') ? 'true' : 'false');
+  });
+  document.getElementById('entriesToggle').addEventListener('keydown', (ev) => {
+    if (ev.key === 'Enter' || ev.key === ' ') {
+      ev.preventDefault();
+      document.getElementById('entriesToggle').click();
+    }
   });
 
   document.getElementById('logoutBtn').addEventListener('click', async () => {
@@ -2918,7 +3155,7 @@ async function init() {
       input.value = '';
       renderAll();
     } catch (e) {
-      alert('Erro ao adicionar cliente: ' + e.message);
+      friendlyError('Erro ao adicionar cliente', e);
     }
   });
 
@@ -2969,7 +3206,9 @@ async function init() {
       if (faturou === 'sim' && fileInput.files && fileInput.files[0]) {
         const file = fileInput.files[0];
         if (file.size > 20 * 1024 * 1024) {
-          throw new Error('PDF muito grande (máximo 20MB).');
+          const sizeErr = new Error('PDF muito grande (máximo 20MB).');
+          sizeErr.friendly = true;
+          throw sizeErr;
         }
         const tempId = crypto.randomUUID();
         const { url, nome } = await uploadPdf(file, tempId);
@@ -2991,7 +3230,8 @@ async function init() {
       statusEl.className = 'status-msg saved-flash';
       setTimeout(() => { statusEl.textContent = ''; }, 3000);
     } catch (err) {
-      statusEl.textContent = 'Erro ao salvar: ' + err.message;
+      console.error('[Erro ao salvar lançamento]', err);
+      statusEl.textContent = err.friendly ? err.message : 'Não foi possível salvar o lançamento. Tente novamente.';
       statusEl.className = 'status-msg error-flash';
     } finally {
       saveBtn.disabled = false;
@@ -3028,7 +3268,7 @@ async function init() {
         await loadEntries();
         renderAll();
       } catch (e) {
-        alert('Erro ao excluir: ' + e.message);
+        friendlyError('Erro ao excluir lançamento', e);
       }
       pendingDeleteId = null;
     }
@@ -3048,7 +3288,7 @@ async function init() {
         const url = await resolvePdfUrl(raw);
         if (url) window.open(url, '_blank', 'noopener');
       } catch (e) {
-        alert('Erro ao abrir PDF: ' + e.message);
+        friendlyError('Erro ao abrir PDF', e);
       }
       return;
     }
@@ -3100,7 +3340,8 @@ async function init() {
       document.getElementById('attachPdfModal').classList.add('hidden');
       pendingAttachId = null;
     } catch (e) {
-      statusEl.textContent = 'Erro ao enviar: ' + e.message;
+      console.error('[Erro ao anexar PDF]', e);
+      statusEl.textContent = 'Não foi possível enviar o PDF. Verifique o arquivo e tente novamente.';
       statusEl.className = 'status-msg error-flash';
     }
     document.getElementById('confirmAttachPdfBtn').disabled = false;
