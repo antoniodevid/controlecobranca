@@ -915,6 +915,109 @@
     background: linear-gradient(90deg, var(--mf-verde), var(--mf-lima));
     border-radius: 14px 14px 0 0;
   }
+  /* ── Botão expandir card ── */
+  .expand-btn {
+    position: absolute;
+    top: 10px; right: 10px;
+    width: 26px; height: 26px;
+    border: none; background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0;
+    transition: opacity .15s, background .15s, color .15s;
+    z-index: 2;
+    padding: 0;
+  }
+  .metric:hover .expand-btn,
+  .card:hover .expand-btn,
+  .chart-card-item:hover .expand-btn { opacity: 1; }
+  .expand-btn:hover {
+    background: var(--accent-light);
+    color: var(--mf-verde);
+  }
+  /* ── Modal de expansão ── */
+  .expand-overlay {
+    position: fixed; inset: 0;
+    background: rgba(3,28,28,0.55);
+    backdrop-filter: blur(3px);
+    z-index: 1200;
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+    opacity: 0; pointer-events: none;
+    transition: opacity .2s;
+  }
+  .expand-overlay.active { opacity: 1; pointer-events: all; }
+  .expand-modal {
+    background: var(--card);
+    border-radius: 18px;
+    box-shadow: 0 24px 64px rgba(0,0,0,.3);
+    width: 100%; max-width: 920px;
+    max-height: 88vh;
+    display: flex; flex-direction: column;
+    transform: scale(.96) translateY(8px);
+    transition: transform .2s;
+    overflow: hidden;
+  }
+  .expand-overlay.active .expand-modal { transform: scale(1) translateY(0); }
+  .expand-modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 22px 14px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .expand-modal-title {
+    font-family: var(--font-heading);
+    font-size: 15px; font-weight: 700;
+    color: var(--mf-teal);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .expand-modal-title::before {
+    content: '';
+    display: inline-block;
+    width: 3px; height: 16px;
+    background: var(--mf-verde);
+    border-radius: 2px;
+  }
+  .expand-modal-close {
+    width: 30px; height: 30px;
+    border: 1px solid var(--border);
+    background: var(--bg); border-radius: 8px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-secondary);
+    font-size: 16px; line-height: 1;
+    transition: background .15s, color .15s;
+  }
+  .expand-modal-close:hover { background: var(--border); color: var(--text-primary); }
+  .expand-modal-body {
+    padding: 22px; overflow-y: auto; flex: 1;
+  }
+  .expand-breakdown-table {
+    width: 100%; border-collapse: collapse; font-size: 13px;
+  }
+  .expand-breakdown-table th {
+    font-size: 11px; font-weight: 700; color: var(--text-secondary);
+    text-transform: uppercase; letter-spacing: .5px;
+    padding: 6px 12px 10px; text-align: left;
+    border-bottom: 2px solid var(--border);
+  }
+  .expand-breakdown-table th.num { text-align: right; }
+  .expand-breakdown-table td {
+    padding: 9px 12px; border-bottom: 1px solid var(--border);
+  }
+  .expand-breakdown-table td.num { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .expand-breakdown-table td.pct { text-align: right; color: var(--text-secondary); font-size: 12px; }
+  .expand-breakdown-table tbody tr:hover td { background: var(--accent-light); }
+  .expand-chart-wrap { width: 100%; min-height: 380px; position: relative; }
+  .expand-big-value {
+    font-family: var(--font-heading);
+    font-size: 48px; font-weight: 800;
+    color: var(--mf-teal); margin: 0 0 6px;
+    letter-spacing: -1px;
+  }
+  .expand-big-label { font-size: 13px; color: var(--text-secondary); margin-bottom: 24px; }
   .metric-icon {
     width: 36px;
     height: 36px;
@@ -1599,22 +1702,37 @@
     </div>
   </div>
 
-  <div class="card" id="chartsCard">
+  <div class="card" id="chartsCard" style="position:relative;">
+    <button class="expand-btn" onclick="openCardExpand('charts')" title="Expandir">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+    </button>
     <h2>Faturamento em gráficos</h2>
     <div class="charts-grid" id="chartsGrid">
-      <div class="chart-card-item">
+      <div class="chart-card-item" style="position:relative;">
+        <button class="expand-btn" onclick="openCardExpand('chartMes')" title="Expandir gráfico">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+        </button>
         <div class="chart-subtitle">Faturado por mês</div>
         <div class="chart-wrap"><div class="chart-inner" id="chartMonthInner"><canvas id="chartMonth"></canvas></div></div>
       </div>
-      <div class="chart-card-item">
+      <div class="chart-card-item" style="position:relative;">
+        <button class="expand-btn" onclick="openCardExpand('chartCliente')" title="Expandir gráfico">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+        </button>
         <div class="chart-subtitle">Faturado por cliente</div>
         <div class="chart-wrap-v"><div class="chart-inner-v" id="chartClientInner"><canvas id="chartClient"></canvas></div></div>
       </div>
-      <div class="chart-card-item">
+      <div class="chart-card-item" style="position:relative;">
+        <button class="expand-btn" onclick="openCardExpand('chartVertical')" title="Expandir gráfico">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+        </button>
         <div class="chart-subtitle">Faturado por vertical</div>
         <div class="chart-wrap-v"><div class="chart-inner-v" id="chartVerticalInner"><canvas id="chartVertical"></canvas></div></div>
       </div>
-      <div class="chart-card-item">
+      <div class="chart-card-item" style="position:relative;">
+        <button class="expand-btn" onclick="openCardExpand('chartAbc')" title="Expandir gráfico">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+        </button>
         <div class="chart-subtitle">Curva ABC de clientes</div>
         <div class="abc-donut-wrap" id="abcDonutWrap">
           <div class="abc-canvas-container">
@@ -1702,7 +1820,10 @@
     <span class="status-msg" id="saveStatus"></span>
   </div>
 
-  <div class="card card-collapsible" id="entriesCard">
+  <div class="card card-collapsible" id="entriesCard" style="position:relative;">
+    <button class="expand-btn" onclick="openCardExpand('tabela')" title="Expandir tabela" style="top:14px;right:14px;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+    </button>
     <div class="card-toggle" id="entriesToggle" role="button" tabindex="0" aria-expanded="false" aria-controls="entriesCardBody">
       <h2>Base de lançamentos</h2>
       <div class="toggle-meta">
@@ -1766,6 +1887,17 @@
     <a href="mailto:antoniodevid@meirelesefreitas.com.br">antoniodevid@meirelesefreitas.com.br</a>
   </footer>
 
+</div>
+
+<!-- Modal de expansão de cards -->
+<div class="expand-overlay" id="expandOverlay" role="dialog" aria-modal="true">
+  <div class="expand-modal">
+    <div class="expand-modal-header">
+      <div class="expand-modal-title" id="expandModalTitle">Detalhes</div>
+      <button class="expand-modal-close" id="expandModalClose" aria-label="Fechar">✕</button>
+    </div>
+    <div class="expand-modal-body" id="expandModalBody"></div>
+  </div>
 </div>
 
 <!-- Modal de detalhe do grupo ABC -->
@@ -2258,22 +2390,26 @@ function renderMetrics() {
   const qtdLancamentos = filtered.length;
   const totalClientes = new Set(filtered.map(e => e.cliente)).size;
 
+  const expandIcon = `<button class="expand-btn" onclick="openCardExpand(this.dataset.type)" data-type="__TYPE__" title="Expandir"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg></button>`;
   document.getElementById('metrics').innerHTML = `
-    <div class="metric">
+    <div class="metric" style="position:relative;">
+      ${expandIcon.replace('__TYPE__','metricFaturado')}
       <div class="metric-icon">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
       </div>
       <div class="label">Total faturado</div>
       <div class="value">${fmtCurrency(totalFaturado)}</div>
     </div>
-    <div class="metric">
+    <div class="metric" style="position:relative;">
+      ${expandIcon.replace('__TYPE__','metricLancamentos')}
       <div class="metric-icon">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
       </div>
       <div class="label">Lançamentos</div>
       <div class="value">${qtdLancamentos}</div>
     </div>
-    <div class="metric">
+    <div class="metric" style="position:relative;">
+      ${expandIcon.replace('__TYPE__','metricClientes')}
       <div class="metric-icon">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
       </div>
@@ -3401,6 +3537,128 @@ async function init() {
     const role = await resolveRole(session.user);
     await showApp(role);
   }
+}
+
+/* ══════════════════════════════════════
+   SISTEMA DE EXPANSÃO DE CARDS
+══════════════════════════════════════ */
+let expandChartInstance = null;
+
+function closeExpandModal() {
+  document.getElementById('expandOverlay').classList.remove('active');
+  if (expandChartInstance) { expandChartInstance.destroy(); expandChartInstance = null; }
+}
+
+document.getElementById('expandModalClose').addEventListener('click', closeExpandModal);
+document.getElementById('expandOverlay').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('expandOverlay')) closeExpandModal();
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeExpandModal(); });
+
+function openCardExpand(type) {
+  const overlay = document.getElementById('expandOverlay');
+  const title   = document.getElementById('expandModalTitle');
+  const body    = document.getElementById('expandModalBody');
+  if (expandChartInstance) { expandChartInstance.destroy(); expandChartInstance = null; }
+
+  const filtered = getFilteredEntries();
+  const totalFaturado = filtered.reduce((s, e) => s + (+e.valor || 0), 0);
+
+  function breakdownTable(rows, cols) {
+    return `<table class="expand-breakdown-table">
+      <thead><tr>${cols.map((c,i)=>`<th class="${i>0?'num':''}">${c}</th>`).join('')}</tr></thead>
+      <tbody>${rows.join('')}</tbody>
+    </table>`;
+  }
+
+  if (type === 'metricFaturado') {
+    title.textContent = 'Total faturado — Breakdown por vertical';
+    const map = {};
+    filtered.forEach(e => { const v = e.vertical || 'Sem vertical'; map[v] = (map[v]||0)+(+e.valor||0); });
+    const rows = Object.entries(map).sort((a,b)=>b[1]-a[1]).map(([v,val]) =>
+      `<tr><td>${v}</td><td class="num">${fmtCurrency(val)}</td><td class="pct">${(val/totalFaturado*100).toFixed(1)}%</td></tr>`);
+    body.innerHTML = `<div class="expand-big-value">${fmtCurrency(totalFaturado)}</div>
+      <div class="expand-big-label">${filtered.length} lançamentos no filtro atual</div>
+      ${breakdownTable(rows, ['Vertical','Valor','%'])}`;
+
+  } else if (type === 'metricLancamentos') {
+    title.textContent = 'Lançamentos — Breakdown por mês';
+    const map = {};
+    filtered.forEach(e => { map[e.mes] = (map[e.mes]||{count:0,val:0}); map[e.mes].count++; map[e.mes].val+=(+e.valor||0); });
+    const rows = Object.entries(map).sort((a,b)=>a[0].localeCompare(b[0])).map(([mes,d]) =>
+      `<tr><td>${mes}</td><td class="num">${d.count}</td><td class="num">${fmtCurrency(d.val)}</td></tr>`);
+    body.innerHTML = `<div class="expand-big-value">${filtered.length}</div>
+      <div class="expand-big-label">lançamentos totais no filtro atual</div>
+      ${breakdownTable(rows, ['Mês','NFs','Valor'])}`;
+
+  } else if (type === 'metricClientes') {
+    title.textContent = 'Clientes ativos — Ranking por faturamento';
+    const map = {};
+    filtered.forEach(e => { map[e.cliente] = (map[e.cliente]||0)+(+e.valor||0); });
+    const rows = Object.entries(map).sort((a,b)=>b[1]-a[1]).map(([cli,val],i) =>
+      `<tr><td style="color:var(--text-secondary);width:32px">${i+1}</td><td>${cli}</td><td class="num">${fmtCurrency(val)}</td><td class="pct">${(val/totalFaturado*100).toFixed(1)}%</td></tr>`);
+    body.innerHTML = `<div class="expand-big-value">${Object.keys(map).length}</div>
+      <div class="expand-big-label">clientes com lançamentos no filtro atual</div>
+      ${breakdownTable(rows, ['#','Cliente','Faturado','%'])}`;
+
+  } else if (type === 'chartMes') {
+    title.textContent = 'Faturado por mês';
+    body.innerHTML = `<div class="expand-chart-wrap"><canvas id="expandCanvas"></canvas></div>`;
+    const orig = Chart.getChart('chartMonth');
+    if (orig) {
+      expandChartInstance = new Chart(document.getElementById('expandCanvas'), {
+        type: orig.config.type,
+        data: JSON.parse(JSON.stringify(orig.config.data)),
+        options: { ...JSON.parse(JSON.stringify(orig.config.options)), responsive: true, maintainAspectRatio: false }
+      });
+    }
+
+  } else if (type === 'chartCliente') {
+    title.textContent = 'Faturado por cliente';
+    body.innerHTML = `<div class="expand-chart-wrap" style="min-height:500px"><canvas id="expandCanvas"></canvas></div>`;
+    const orig = Chart.getChart('chartClient');
+    if (orig) {
+      expandChartInstance = new Chart(document.getElementById('expandCanvas'), {
+        type: orig.config.type,
+        data: JSON.parse(JSON.stringify(orig.config.data)),
+        options: { ...JSON.parse(JSON.stringify(orig.config.options)), responsive: true, maintainAspectRatio: false }
+      });
+    }
+
+  } else if (type === 'chartVertical') {
+    title.textContent = 'Faturado por vertical';
+    body.innerHTML = `<div class="expand-chart-wrap" style="min-height:480px"><canvas id="expandCanvas"></canvas></div>`;
+    const orig = Chart.getChart('chartVertical');
+    if (orig) {
+      expandChartInstance = new Chart(document.getElementById('expandCanvas'), {
+        type: orig.config.type,
+        data: JSON.parse(JSON.stringify(orig.config.data)),
+        options: { ...JSON.parse(JSON.stringify(orig.config.options)), responsive: true, maintainAspectRatio: false }
+      });
+    }
+
+  } else if (type === 'chartAbc') {
+    title.textContent = 'Curva ABC de clientes';
+    const abc = computeAbc(filtered);
+    const rows = ['A','B','C'].flatMap(g => (abc[g]||[]).map((c,i) =>
+      `<tr><td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${g==='A'?'#1a944d':g==='B'?'#a4e845':'#e3ded0'};margin-right:6px;"></span>${g}</td><td>${c.cliente}</td><td class="num">${fmtCurrency(c.total)}</td><td class="pct">${(c.total/totalFaturado*100).toFixed(1)}%</td></tr>`));
+    body.innerHTML = breakdownTable(rows, ['Grupo','Cliente','Faturado','%']);
+
+  } else if (type === 'tabela') {
+    title.textContent = 'Base de lançamentos';
+    const tbl = document.getElementById('entriesTable');
+    body.innerHTML = `<div style="overflow-x:auto">${tbl ? tbl.outerHTML : '<p>Nenhum dado</p>'}</div>`;
+
+  } else if (type === 'charts') {
+    title.textContent = 'Faturamento em gráficos';
+    const map = {};
+    filtered.forEach(e => { map[e.mes] = (map[e.mes]||0)+(+e.valor||0); });
+    const rows = Object.entries(map).sort((a,b)=>a[0].localeCompare(b[0])).map(([mes,val]) =>
+      `<tr><td>${mes}</td><td class="num">${fmtCurrency(val)}</td><td class="pct">${(val/totalFaturado*100).toFixed(1)}%</td></tr>`);
+    body.innerHTML = breakdownTable(rows, ['Mês','Valor','%']);
+  }
+
+  overlay.classList.add('active');
 }
 
 init();
