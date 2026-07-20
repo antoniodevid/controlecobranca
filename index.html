@@ -3639,9 +3639,9 @@ function openCardExpand(type) {
 
   } else if (type === 'chartAbc') {
     title.textContent = 'Curva ABC de clientes';
-    const abc = computeAbc(filtered);
+    const abc = computeABC(filtered);
     const rows = ['A','B','C'].flatMap(g => (abc[g]||[]).map((c,i) =>
-      `<tr><td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${g==='A'?'#1a944d':g==='B'?'#a4e845':'#e3ded0'};margin-right:6px;"></span>${g}</td><td>${c.cliente}</td><td class="num">${fmtCurrency(c.total)}</td><td class="pct">${(c.total/totalFaturado*100).toFixed(1)}%</td></tr>`));
+      `<tr><td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${g==='A'?'#1a944d':g==='B'?'#a4e845':'#e3ded0'};margin-right:6px;"></span>${g}</td><td>${c.cliente}</td><td class="num">${fmtCurrency(c.valor)}</td><td class="pct">${(c.valor/totalFaturado*100).toFixed(1)}%</td></tr>`));
     body.innerHTML = breakdownTable(rows, ['Grupo','Cliente','Faturado','%']);
 
   } else if (type === 'tabela') {
