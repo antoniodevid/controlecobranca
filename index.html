@@ -1420,19 +1420,43 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 8px 18px;
-    font-size: 12.5px;
-    color: var(--text-secondary);
-    margin: -6px 0 16px;
-    padding: 0 2px;
+    gap: 8px 10px;
+    margin: -2px 0 16px;
+    padding: 0;
   }
   .data-coverage-bar:empty { display: none; }
-  .coverage-item { display: flex; align-items: center; gap: 6px; }
+  .coverage-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 6px 13px;
+    border-radius: 20px;
+    background: #fff;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    box-shadow: 0 1px 3px rgba(3,56,56,.04);
+    transition: box-shadow .2s, transform .2s;
+  }
+  .coverage-item:hover {
+    box-shadow: 0 3px 10px rgba(3,56,56,.08);
+    transform: translateY(-1px);
+  }
   .coverage-item svg { flex-shrink: 0; }
-  .coverage-complete svg { color: var(--success); }
-  .coverage-incomplete { color: #a05a00; }
+  .coverage-complete {
+    background: var(--accent-light);
+    border-color: rgba(26,148,77,.25);
+    color: var(--mf-verde-escuro);
+  }
+  .coverage-complete svg { color: var(--mf-verde); }
+  .coverage-incomplete {
+    background: #fff3e0;
+    border-color: #f0c070;
+    color: #6b3a00;
+  }
   .coverage-incomplete svg { color: #e07b00; }
-  .coverage-incomplete strong { font-weight: 700; }
+  .coverage-incomplete strong { font-weight: 800; }
 
   /* ══════════════════════════════════════
      BOTÕES
