@@ -3189,6 +3189,10 @@ async function refreshAll(statusEl) {
 }
 
 async function showApp(role) {
+  // Fluxo padrão pós-login: cai direto na Visão Executiva.
+  // O painel de gestão continua acessível via executivo (engrenagem) com ?gestao=1.
+  const wantGestao = new URLSearchParams(window.location.search).has('gestao');
+  if (!wantGestao) { window.location.replace('executivo.html'); return; }
   document.getElementById('loginScreen').classList.add('hidden');
   document.getElementById('appScreen').classList.remove('hidden');
   applyRoleToUI(role);

@@ -901,7 +901,7 @@
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
   </button>
   <div class="rail-spacer"></div>
-  <a class="rail-btn" href="index.html" title="Gestão (cadastros)">
+  <a class="rail-btn" href="index.html?gestao=1" title="Gestão (cadastros)">
     <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
   </a>
   <button class="rail-btn" id="logoutBtn" title="Sair">
@@ -1079,7 +1079,6 @@
   <div class="ana-chips">
     <div class="achip"><span class="achip-v" id="acCount">—</span><span class="achip-l">lançamentos</span></div>
     <div class="achip"><span class="achip-v" id="acTotal">—</span><span class="achip-l">faturado</span></div>
-    <div class="achip"><span class="achip-v" id="acTicket">—</span><span class="achip-l">ticket médio</span></div>
     <div class="adist">
       <div class="adist-bar" id="aDist"></div>
       <div class="adist-cap" id="aDistCap"></div>
@@ -1658,7 +1657,6 @@ function renderAna(resetPage = true) {
   const total = list.reduce((s, e) => s + Number(e.valor || 0), 0);
   countUp($a('acCount'), list.length, v => Math.round(v).toLocaleString('pt-BR'));
   countUp($a('acTotal'), total, fmtShort);
-  countUp($a('acTicket'), list.length ? total / list.length : 0, fmtShort);
 
   // Distribuição por vertical (elemento gráfico do analítico)
   const agg = sumBy(list, 'vertical');
