@@ -1651,8 +1651,10 @@ function renderArea() {
   grad.addColorStop(1, 'rgba(26,148,77,0)');
   const labels = totals.map(([m]) => mesLabel(m));
   const data = totals.map(([, v]) => v);
-  const ptColors = totals.map(([m]) => (period !== 'all' && m === period) ? '#a4e845' : 'rgba(164,232,69,.55)');
-  const ptRadius = totals.map(([m]) => (period !== 'all' && m === period) ? 6 : 3.5);
+  const isActiveMonth = m => periodGranularity === 'month' ? m === periodKey
+    : periodGranularity !== 'all' && keyOfMonth(m, periodGranularity) === periodKey;
+  const ptColors = totals.map(([m]) => isActiveMonth(m) ? '#a4e845' : 'rgba(164,232,69,.55)');
+  const ptRadius = totals.map(([m]) => isActiveMonth(m) ? 6 : 3.5);
 
   if (areaChart) areaChart.destroy();
   areaChart = new Chart(ctx, {
