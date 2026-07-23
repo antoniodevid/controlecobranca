@@ -126,33 +126,6 @@
   }
   .topbar h1 span { color: var(--lima); }
   .topbar-sub { color: var(--text-sec); font-size: 13px; margin-top: 4px; }
-  .period-pills {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-    background: var(--surface);
-    border: 1px solid var(--stroke);
-    border-radius: 16px;
-    padding: 5px;
-  }
-  .pill {
-    border: none;
-    background: transparent;
-    color: var(--text-sec);
-    font-family: 'Inter', sans-serif;
-    font-size: 12.5px;
-    font-weight: 600;
-    padding: 8px 14px;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: background .2s, color .2s, box-shadow .2s;
-  }
-  .pill:hover { color: var(--text); }
-  .pill.active {
-    background: linear-gradient(135deg, var(--verde), #157a3f);
-    color: #fff;
-    box-shadow: 0 4px 16px rgba(26,148,77,.4);
-  }
 
   /* ── Grid de cards ───────────────────── */
   .grid {
@@ -765,7 +738,116 @@
   .view { display: none; }
   .view.view-on { display: block; animation: viewIn .4s ease; }
   @keyframes viewIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
-  .topbar-right { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+  .topbar-right { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+  .period-control { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+  .gran-tabs {
+    display: flex;
+    gap: 3px;
+    background: var(--surface);
+    border: 1px solid var(--stroke);
+    border-radius: 14px;
+    padding: 4px;
+  }
+  .gtab {
+    border: none;
+    background: transparent;
+    color: var(--text-sec);
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 7px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background .2s, color .2s, box-shadow .2s;
+    white-space: nowrap;
+  }
+  .gtab:hover { color: var(--text); }
+  .gtab.active {
+    background: linear-gradient(135deg, var(--verde), #157a3f);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(26,148,77,.4);
+  }
+  .period-stepper {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--surface);
+    border: 1px solid var(--stroke);
+    border-radius: 14px;
+    padding: 4px;
+  }
+  .pstep-btn {
+    width: 30px; height: 30px;
+    border: none;
+    background: transparent;
+    color: var(--text-sec);
+    border-radius: 9px;
+    font-size: 16px;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    transition: background .2s, color .2s;
+  }
+  .pstep-btn:hover:not(:disabled) { background: rgba(234,245,238,.07); color: var(--lima); }
+  .pstep-btn:disabled { opacity: .3; cursor: default; }
+  .pstep-label-wrap { position: relative; }
+  .pstep-label {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    font-family: 'Sora', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    padding: 7px 10px;
+    border-radius: 9px;
+    cursor: pointer;
+    min-width: 96px;
+    justify-content: center;
+    white-space: nowrap;
+    transition: background .2s;
+  }
+  .pstep-label:hover { background: rgba(234,245,238,.07); }
+  .pstep-label svg { color: var(--text-sec); flex-shrink: 0; transition: transform .2s; }
+  .pstep-label.open svg { transform: rotate(180deg); }
+  .pstep-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: 40;
+    width: 168px;
+    max-height: 260px;
+    overflow-y: auto;
+    background: linear-gradient(160deg, var(--surface-2), var(--surface));
+    border: 1px solid var(--stroke-strong);
+    border-radius: 14px;
+    padding: 6px;
+    box-shadow: 0 18px 44px rgba(0,0,0,.5);
+    opacity: 0;
+    transform: translateY(-6px);
+    pointer-events: none;
+    transition: opacity .18s, transform .18s;
+  }
+  .pstep-dropdown.show { opacity: 1; transform: none; pointer-events: auto; }
+  .pstep-dropdown::-webkit-scrollbar { width: 5px; }
+  .pstep-dropdown::-webkit-scrollbar-thumb { background: rgba(164,232,69,.25); border-radius: 5px; }
+  .pstep-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    border: none;
+    background: transparent;
+    color: var(--text-sec);
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 8px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .pstep-item:hover { background: rgba(234,245,238,.06); color: var(--text); }
+  .pstep-item.sel { background: rgba(26,148,77,.18); color: var(--lima); }
   .cross-chip {
     display: inline-flex;
     align-items: center;
@@ -1077,7 +1159,20 @@
       <div class="topbar-sub" id="subLine">Faturamento consolidado · Meireles &amp; Freitas</div>
     </div>
     <div class="topbar-right">
-      <div class="period-pills" id="pills"></div>
+      <div class="period-control" id="periodControl">
+        <div class="gran-tabs" id="granTabs"></div>
+        <div class="period-stepper" id="periodStepper" hidden>
+          <button class="pstep-btn" id="perPrev" aria-label="Período anterior">‹</button>
+          <div class="pstep-label-wrap">
+            <button class="pstep-label" id="perLabelBtn">
+              <span id="perLabelText">—</span>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="pstep-dropdown" id="perDropdown"></div>
+          </div>
+          <button class="pstep-btn" id="perNext" aria-label="Próximo período">›</button>
+        </div>
+      </div>
       <button class="cross-chip" id="crossChip" hidden></button>
     </div>
   </div>
@@ -1295,7 +1390,8 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 });
 
 let entries = [];
-let period = 'all'; // 'all' | 'YYYY-MM'
+let periodGranularity = 'all'; // 'all' | 'month' | 'quarter' | 'half'
+let periodKey = null;          // ex.: '2026-06' | '2026-Q2' | '2026-H1'
 let crossFilter = null; // filtro herdado da Visão Analítica: {search, vertical, cliente, pend}
 let areaChart = null;
 let abcChart = null;
@@ -1313,6 +1409,41 @@ function escapeHtml(str) {
   const d = document.createElement('div');
   d.textContent = str == null ? '' : String(str);
   return d.innerHTML;
+}
+
+/* ── Granularidade de período: mês / trimestre / semestre ── */
+const GRAN_LABEL = { month: 'mês', quarter: 'trimestre', half: 'semestre' };
+const GRAN_TABS = [
+  { g: 'all', label: 'Totalidade' },
+  { g: 'month', label: 'Mês' },
+  { g: 'quarter', label: 'Trimestre' },
+  { g: 'half', label: 'Semestre' }
+];
+
+function keyOfMonth(m, gran) {
+  const [y, mm] = m.split('-').map(Number);
+  if (gran === 'month') return m;
+  if (gran === 'quarter') return `${y}-Q${Math.ceil(mm / 3)}`;
+  if (gran === 'half') return `${y}-H${mm <= 6 ? 1 : 2}`;
+  return 'all';
+}
+function periodLabel(key, gran) {
+  if (gran === 'month') return mesLabel(key);
+  if (gran === 'quarter') { const [y, q] = key.split('-Q'); return `${q}º tri/${y.slice(2)}`; }
+  if (gran === 'half') { const [y, h] = key.split('-H'); return `${h}º sem/${y.slice(2)}`; }
+  return key;
+}
+function granTotals(gran) {
+  const map = {};
+  entries.forEach(e => {
+    const k = keyOfMonth(e.mes, gran);
+    map[k] = (map[k] || 0) + Number(e.valor || 0);
+  });
+  return Object.entries(map).sort((a, b) => a[0].localeCompare(b[0]));
+}
+function matchesPeriod(e) {
+  if (periodGranularity === 'all') return true;
+  return keyOfMonth(e.mes, periodGranularity) === periodKey;
 }
 
 /* Count-up animado (respeita prefers-reduced-motion) */
@@ -1364,7 +1495,7 @@ function filtered() {
       (!f.pend || !e.pdf_url) &&
       (!f.search || `${e.cliente} ${e.doc || ''} ${e.obs || ''} ${e.vertical || ''}`.toLowerCase().includes(f.search)));
   }
-  return period === 'all' ? list : list.filter(e => e.mes === period);
+  return list.filter(matchesPeriod);
 }
 function sumBy(list, key) {
   const map = {};
@@ -1389,42 +1520,116 @@ function computeABC(list) {
 }
 
 /* ── Render ────────────────────────────── */
-function renderPills() {
-  const months = monthTotals().map(([m]) => m);
-  const pills = document.getElementById('pills');
-  pills.innerHTML = '';
-  const mk = (val, label) => {
-    const b = document.createElement('button');
-    b.className = 'pill' + (period === val ? ' active' : '');
-    b.textContent = label;
-    b.onclick = () => { period = val; renderAll(); };
-    pills.appendChild(b);
-  };
-  mk('all', 'Totalidade');
-  months.forEach(m => mk(m, mesLabel(m)));
+function renderPeriodControl() {
+  const tabs = document.getElementById('granTabs');
+  if (!tabs.childElementCount) {
+    tabs.innerHTML = GRAN_TABS.map(t => `<button class="gtab" data-g="${t.g}">${t.label}</button>`).join('');
+    tabs.addEventListener('click', e => {
+      const b = e.target.closest('.gtab');
+      if (!b) return;
+      setGranularity(b.dataset.g);
+    });
+  }
+  tabs.querySelectorAll('.gtab').forEach(b => b.classList.toggle('active', b.dataset.g === periodGranularity));
+
+  const stepper = document.getElementById('periodStepper');
+  if (periodGranularity === 'all') { stepper.hidden = true; return; }
+  stepper.hidden = false;
+  document.getElementById('perLabelText').textContent = periodLabel(periodKey, periodGranularity);
+  const keys = granTotals(periodGranularity).map(([k]) => k);
+  const idx = keys.indexOf(periodKey);
+  document.getElementById('perPrev').disabled = idx <= 0;
+  document.getElementById('perNext').disabled = idx === -1 || idx >= keys.length - 1;
+}
+
+function setGranularity(g) {
+  periodGranularity = g;
+  if (g === 'all') { periodKey = null; }
+  else {
+    const keys = granTotals(g).map(([k]) => k);
+    // Preserva o período atual se ainda existir na nova granularidade; senão, cai no mais recente
+    periodKey = keys.includes(periodKey) ? periodKey : (keys[keys.length - 1] || null);
+    if (!periodKey) { periodGranularity = 'all'; }
+  }
+  closePerDropdown();
+  renderAll();
+}
+
+function stepPeriod(delta) {
+  const keys = granTotals(periodGranularity).map(([k]) => k);
+  const idx = keys.indexOf(periodKey);
+  const next = idx + delta;
+  if (next < 0 || next >= keys.length) return;
+  periodKey = keys[next];
+  renderAll();
+}
+
+function togglePerDropdown() {
+  const dd = document.getElementById('perDropdown');
+  const open = dd.classList.contains('show');
+  open ? closePerDropdown() : openPerDropdown();
+}
+function openPerDropdown() {
+  const dd = document.getElementById('perDropdown');
+  const keys = granTotals(periodGranularity).map(([k]) => k);
+  dd.innerHTML = keys.slice().reverse().map(k =>
+    `<button class="pstep-item${k === periodKey ? ' sel' : ''}" data-k="${k}">${periodLabel(k, periodGranularity)}</button>`).join('');
+  dd.classList.add('show');
+  document.getElementById('perLabelBtn').classList.add('open');
+}
+function closePerDropdown() {
+  document.getElementById('perDropdown').classList.remove('show');
+  document.getElementById('perLabelBtn').classList.remove('open');
+}
+
+function initPeriodControl() {
+  document.getElementById('perPrev').addEventListener('click', () => stepPeriod(-1));
+  document.getElementById('perNext').addEventListener('click', () => stepPeriod(1));
+  document.getElementById('perLabelBtn').addEventListener('click', togglePerDropdown);
+  document.getElementById('perDropdown').addEventListener('click', e => {
+    const b = e.target.closest('.pstep-item');
+    if (!b) return;
+    periodKey = b.dataset.k;
+    closePerDropdown();
+    renderAll();
+  });
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.pstep-label-wrap')) closePerDropdown();
+  });
 }
 
 function renderGauge(list) {
-  const totals = monthTotals();
-  const best = totals.reduce((mx, cur) => cur[1] > mx[1] ? cur : mx, ['', 0]);
-  const fat = list.reduce((s, e) => s + Number(e.valor || 0), 0);
-  const nMeses = period === 'all' ? Math.max(totals.length, 1) : 1;
-  const mediaMensal = fat / nMeses;
-  const pct = best[1] > 0 ? mediaMensal / best[1] * 100 : 0;
-
   const arc = document.getElementById('gaugeArc');
   const C = 2 * Math.PI * 96;
   arc.style.strokeDasharray = C;
+  const fat = list.reduce((s, e) => s + Number(e.valor || 0), 0);
+  let pct, footHtml;
+
+  if (periodGranularity === 'all') {
+    const totals = monthTotals();
+    const best = totals.reduce((mx, cur) => cur[1] > mx[1] ? cur : mx, ['', 0]);
+    const nMeses = Math.max(totals.length, 1);
+    const mediaMensal = fat / nMeses;
+    pct = best[1] > 0 ? mediaMensal / best[1] * 100 : 0;
+    document.getElementById('gaugePct').textContent = pct.toFixed(0) + '% · média mensal';
+    footHtml = `Média mensal de <strong>${fmtShort(mediaMensal)}</strong> frente ao melhor mês, <strong>${mesLabel(best[0])}</strong> (${fmtShort(best[1])}).`;
+  } else {
+    const totals = granTotals(periodGranularity);
+    const best = totals.reduce((mx, cur) => cur[1] > mx[1] ? cur : mx, ['', 0]);
+    pct = best[1] > 0 ? fat / best[1] * 100 : 0;
+    const lbl = GRAN_LABEL[periodGranularity];
+    document.getElementById('gaugePct').textContent = pct.toFixed(0) + '%';
+    footHtml = periodKey === best[0]
+      ? `Este é o melhor ${lbl} da base até agora.`
+      : `Este ${lbl} representa <strong>${pct.toFixed(0)}%</strong> do melhor ${lbl}, <strong>${periodLabel(best[0], periodGranularity)}</strong> (${fmtShort(best[1])}).`;
+  }
+
   arc.style.strokeDashoffset = C;
   requestAnimationFrame(() => {
     arc.style.strokeDashoffset = C * (1 - Math.min(pct, 100) / 100);
   });
-
   countUp(document.getElementById('gaugeValue'), fat, fmtShort);
-  document.getElementById('gaugePct').textContent = pct.toFixed(0) + '%' + (period === 'all' ? ' · média mensal' : '');
-  document.getElementById('gaugeFoot').innerHTML = period === 'all'
-    ? `Média mensal de <strong>${fmtShort(mediaMensal)}</strong> frente ao melhor mês, <strong>${mesLabel(best[0])}</strong> (${fmtShort(best[1])}).`
-    : `Este mês representa <strong>${pct.toFixed(0)}%</strong> do melhor mês, <strong>${mesLabel(best[0])}</strong> (${fmtShort(best[1])}).`;
+  document.getElementById('gaugeFoot').innerHTML = footHtml;
 }
 
 let kpisRendered = false;
@@ -1771,7 +1976,7 @@ function renderCrossChip() {
 
 function renderAll() {
   const list = filtered();
-  renderPills();
+  renderPeriodControl();
   renderGauge(list);
   renderKpis();
   renderArea();
@@ -1783,7 +1988,7 @@ function renderAll() {
   renderSparks();
   renderCrossChip();
   document.getElementById('subLine').textContent =
-    (period === 'all' ? 'Todos os meses consolidados' : 'Referência ' + mesLabel(period)) + ' · Meireles & Freitas';
+    (periodGranularity === 'all' ? 'Todos os meses consolidados' : 'Referência ' + periodLabel(periodKey, periodGranularity)) + ' · Meireles & Freitas';
 }
 
 /* ── Navegação entre abas ──────────────── */
@@ -1902,7 +2107,8 @@ function jumpToExec() {
   crossFilter = (f.search || f.vertical || f.cliente || f.pend)
     ? { search: f.search, vertical: f.vertical, cliente: f.cliente, pend: f.pend }
     : null;
-  period = f.mes || 'all';
+  if (f.mes) { periodGranularity = 'month'; periodKey = f.mes; }
+  else { periodGranularity = 'all'; periodKey = null; }
   hideToast();
   switchView('exec');
   renderAll();
@@ -2006,6 +2212,7 @@ async function boot() {
     initTilt();
     initMacros();
     initAna();
+    initPeriodControl();
     spawnParticles();
   } catch (e) {
     console.error(e);
