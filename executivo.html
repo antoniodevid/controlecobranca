@@ -862,6 +862,11 @@ const fmtShort = v => {
   return fmtBRL(v);
 };
 const mesLabel = m => { const [y, mm] = m.split('-'); return MESES[parseInt(mm, 10) - 1] + '/' + y.slice(2); };
+function escapeHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str == null ? '' : String(str);
+  return d.innerHTML;
+}
 
 /* Count-up animado (respeita prefers-reduced-motion) */
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1034,7 +1039,7 @@ function renderVerticais(list) {
   const wrap = document.getElementById('vertList');
   wrap.innerHTML = rows.map(([nome, v]) => `
     <div class="vbar-row">
-      <div class="vbar-name" title="${nome}">${nome}</div>
+      <div class="vbar-name" title="${escapeHtml(nome)}">${escapeHtml(nome)}</div>
       <div class="vbar-track"><div class="vbar-fill" data-w="${(v / max * 100).toFixed(1)}"></div></div>
       <div class="vbar-val">${fmtShort(v)}</div>
     </div>`).join('');
@@ -1053,9 +1058,9 @@ function renderClientes(list) {
   const wrap = document.getElementById('cliList');
   wrap.innerHTML = rows.map(([nome, v]) => `
     <div class="cli-row">
-      <div class="cli-avatar">${initials(nome)}</div>
+      <div class="cli-avatar">${escapeHtml(initials(nome))}</div>
       <div class="cli-info">
-        <div class="cli-name" title="${nome}">${nome}</div>
+        <div class="cli-name" title="${escapeHtml(nome)}">${escapeHtml(nome)}</div>
         <div class="cli-bar"><span data-w="${(v / max * 100).toFixed(1)}"></span></div>
       </div>
       <div class="cli-val">${fmtShort(v)}</div>
