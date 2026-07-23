@@ -620,14 +620,14 @@
   .fin-p {
     position: absolute;
     bottom: -50px;
-    font-family: 'Sora', sans-serif;
-    font-weight: 800;
-    color: rgba(164,232,69,.13);
-    text-shadow: 0 0 14px rgba(74,222,128,.22);
+    line-height: 0;
+    color: rgba(164,232,69,.14);
+    filter: drop-shadow(0 0 10px rgba(74,222,128,.22));
     animation: floatUp linear infinite;
     user-select: none;
     will-change: transform;
   }
+  .fin-p svg { display: block; }
   @keyframes floatUp {
     from { transform: translateY(0) rotate(0deg); opacity: 0; }
     12% { opacity: 1; }
@@ -1536,14 +1536,18 @@ function renderSparks() {
 function spawnParticles() {
   if (reduceMotion) return;
   const wrap = document.getElementById('finParticles');
-  const chars = ['R$', '$', '◆', '●', 'R$', '$'];
+  // Símbolo Meireles & Freitas (três picos), o mesmo do logo da barra lateral
+  const mark = w => {
+    const h = Math.round(w * 26 / 34);
+    return `<svg width="${w}" height="${h}" viewBox="0 0 34 26" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M2 24 L9 8 L14 18 L20 3 L26 15 L32 24"/></svg>`;
+  };
   let html = '';
   for (let i = 0; i < 14; i++) {
-    const size = 11 + Math.random() * 15;
+    const w = 15 + Math.round(Math.random() * 22);
     const left = Math.random() * 100;
     const dur = 16 + Math.random() * 16;
     const delay = -Math.random() * dur;
-    html += `<span class="fin-p" style="left:${left.toFixed(1)}%;font-size:${size.toFixed(0)}px;animation-duration:${dur.toFixed(1)}s;animation-delay:${delay.toFixed(1)}s">${chars[i % chars.length]}</span>`;
+    html += `<span class="fin-p" style="left:${left.toFixed(1)}%;animation-duration:${dur.toFixed(1)}s;animation-delay:${delay.toFixed(1)}s">${mark(w)}</span>`;
   }
   wrap.innerHTML = html;
 }
