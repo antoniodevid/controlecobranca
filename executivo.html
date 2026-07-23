@@ -646,6 +646,205 @@
   }
   @keyframes orbit { to { transform: rotate(360deg); } }
 
+  /* ── Abas (views) ────────────────────── */
+  .view { display: none; }
+  .view.view-on { display: block; animation: viewIn .4s ease; }
+  @keyframes viewIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  .topbar-right { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+  .cross-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid rgba(240,164,74,.45);
+    background: rgba(240,164,74,.10);
+    color: var(--amber);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 20px;
+    padding: 7px 13px;
+    cursor: pointer;
+    transition: background .2s;
+  }
+  .cross-chip:hover { background: rgba(240,164,74,.18); }
+  .cross-chip[hidden] { display: none; }
+
+  /* ── Visão Analítica ─────────────────── */
+  .ana-filters { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+  .afield {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface);
+    border: 1px solid var(--stroke);
+    border-radius: 12px;
+    padding: 0 12px;
+    min-width: 168px;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .afield:focus-within { border-color: var(--stroke-strong); box-shadow: 0 0 0 3px rgba(74,222,128,.08); }
+  .afield svg { color: var(--text-sec); flex-shrink: 0; }
+  .afield input, .afield select {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 13px;
+    padding: 10px 0;
+    flex: 1;
+    min-width: 0;
+  }
+  .afield select option { background: var(--surface-2); color: var(--text); }
+  .afield-grow { flex: 1; min-width: 230px; }
+  .acheck {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text-sec);
+    background: var(--surface);
+    border: 1px solid var(--stroke);
+    border-radius: 12px;
+    padding: 0 14px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .acheck input { accent-color: var(--verde); }
+  .acheck:has(input:checked) { border-color: rgba(240,164,74,.5); color: var(--amber); background: rgba(240,164,74,.08); }
+  .ana-clear {
+    border: none;
+    background: rgba(234,245,238,.06);
+    color: var(--text-sec);
+    border-radius: 12px;
+    padding: 0 16px;
+    font-family: inherit;
+    font-weight: 600;
+    font-size: 12.5px;
+    cursor: pointer;
+    transition: color .2s, background .2s;
+  }
+  .ana-clear:hover { color: var(--text); background: rgba(234,245,238,.1); }
+  .ana-chips {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    flex-wrap: wrap;
+    background: linear-gradient(160deg, var(--surface-2), var(--surface));
+    border: 1px solid var(--stroke);
+    border-radius: var(--radius);
+    padding: 16px 22px;
+    margin-bottom: 16px;
+  }
+  .achip { display: flex; flex-direction: column; }
+  .achip-v { font-family: 'Sora', sans-serif; font-size: 20px; font-weight: 800; white-space: nowrap; }
+  .achip-l { font-size: 10.5px; color: var(--text-sec); font-weight: 700; text-transform: uppercase; letter-spacing: .9px; margin-top: 2px; }
+  .adist { flex: 1; min-width: 220px; }
+  .adist-bar { display: flex; height: 10px; border-radius: 6px; overflow: hidden; background: rgba(234,245,238,.06); }
+  .adist-bar i { height: 100%; transition: width .8s cubic-bezier(.3,.8,.3,1); }
+  .adist-cap { font-size: 11px; color: var(--text-sec); margin-top: 7px; }
+  .ana-table-card {
+    background: linear-gradient(160deg, var(--surface-2), var(--surface));
+    border: 1px solid var(--stroke);
+    border-radius: var(--radius);
+    overflow: hidden;
+    overflow-x: auto;
+  }
+  .ana-table { width: 100%; min-width: 680px; border-collapse: collapse; font-size: 12.8px; }
+  .ana-table th {
+    position: sticky;
+    top: 0;
+    text-align: left;
+    font-size: 10.5px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-sec);
+    background: rgba(10,20,16,.94);
+    backdrop-filter: blur(6px);
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--stroke);
+    white-space: nowrap;
+  }
+  .ana-table td { padding: 10px 16px; border-bottom: 1px solid rgba(234,245,238,.04); }
+  .ana-table tbody tr { transition: background .15s; }
+  .ana-table tbody tr:hover td { background: rgba(164,232,69,.045); }
+  .ana-table .num, .ana-table th.num { text-align: right; }
+  .ana-table td.num { font-family: 'Sora', sans-serif; font-weight: 700; white-space: nowrap; }
+  .vbadge {
+    display: inline-block;
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 12px;
+    background: rgba(26,148,77,.16);
+    color: var(--lima);
+    border: 1px solid rgba(164,232,69,.18);
+    white-space: nowrap;
+  }
+  .pdf-ok { color: var(--lima); display: inline-flex; }
+  .pdf-ok:hover { filter: drop-shadow(0 0 6px var(--glow)); }
+  .pdf-pend { display: inline-flex; align-items: center; gap: 5px; color: var(--amber); font-size: 11px; font-weight: 700; }
+  .ana-pager { display: flex; align-items: center; justify-content: flex-end; gap: 12px; padding: 12px 16px; }
+  .ana-pager button {
+    width: 30px; height: 30px;
+    border-radius: 9px;
+    border: 1px solid var(--stroke);
+    background: transparent;
+    color: var(--text);
+    font-size: 15px;
+    cursor: pointer;
+    transition: border-color .2s, color .2s;
+  }
+  .ana-pager button:hover:not(:disabled) { border-color: var(--stroke-strong); color: var(--lima); }
+  .ana-pager button:disabled { opacity: .3; cursor: default; }
+  .ana-pager span { font-size: 12px; color: var(--text-sec); }
+
+  /* ── Toast de sugestão ───────────────── */
+  .jump-toast {
+    position: fixed;
+    right: 26px;
+    bottom: 26px;
+    z-index: 60;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: linear-gradient(160deg, #16281f, #0f1d17);
+    border: 1px solid var(--stroke-strong);
+    border-radius: 16px;
+    padding: 13px 15px;
+    box-shadow: 0 18px 50px rgba(0,0,0,.55), 0 0 24px rgba(74,222,128,.12);
+    transform: translateY(18px);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform .35s cubic-bezier(.22,.9,.36,1), opacity .35s;
+    font-size: 13px;
+    color: var(--text);
+    max-width: min(92vw, 420px);
+  }
+  .jump-toast.show { transform: none; opacity: 1; pointer-events: auto; }
+  .jump-toast .jt-go {
+    border: none;
+    background: linear-gradient(135deg, var(--verde), #157a3f);
+    color: #fff;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 12.5px;
+    border-radius: 10px;
+    padding: 9px 14px;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(26,148,77,.4);
+    white-space: nowrap;
+  }
+  .jump-toast .jt-x {
+    border: none;
+    background: transparent;
+    color: var(--text-sec);
+    font-size: 17px;
+    cursor: pointer;
+    line-height: 1;
+  }
+
   @media (max-width: 1240px) {
     .grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -695,25 +894,32 @@
       <path d="M2 24 L9 8 L14 18 L20 3 L26 15 L32 24"/>
     </svg>
   </div>
-  <button class="rail-btn active" title="Visão executiva">
+  <button class="rail-btn active" id="navExec" title="Visão Executiva">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg>
   </button>
-  <a class="rail-btn" href="index.html" title="Voltar ao painel completo">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-  </a>
+  <button class="rail-btn" id="navAna" title="Visão Analítica">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+  </button>
   <div class="rail-spacer"></div>
+  <a class="rail-btn" href="index.html" title="Gestão (cadastros)">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+  </a>
   <button class="rail-btn" id="logoutBtn" title="Sair">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
   </button>
 </nav>
 
 <main class="main">
+<section class="view view-on" id="viewExec">
   <div class="topbar">
     <div>
       <h1>Visão <span>Executiva</span></h1>
       <div class="topbar-sub" id="subLine">Faturamento consolidado · Meireles &amp; Freitas</div>
     </div>
-    <div class="period-pills" id="pills"></div>
+    <div class="topbar-right">
+      <div class="period-pills" id="pills"></div>
+      <button class="cross-chip" id="crossChip" hidden></button>
+    </div>
   </div>
 
   <div class="ticker"><div class="ticker-track" id="tickerTrack"></div></div>
@@ -839,6 +1045,65 @@
       </div>
     </section>
   </div>
+</section>
+
+<section class="view" id="viewAna">
+  <div class="topbar">
+    <div>
+      <h1>Visão <span>Analítica</span></h1>
+      <div class="topbar-sub" id="anaSub">Lançamentos nota a nota · Meireles &amp; Freitas</div>
+    </div>
+  </div>
+
+  <div class="ana-filters">
+    <div class="afield afield-grow">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="aSearch" placeholder="Buscar por cliente, NF ou observação...">
+    </div>
+    <div class="afield">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+      <select id="aVertical"><option value="">Todas as verticais</option></select>
+    </div>
+    <div class="afield">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="1"/><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="14" x2="20" y2="14"/></svg>
+      <select id="aCliente"><option value="">Todos os clientes</option></select>
+    </div>
+    <div class="afield">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <select id="aMes"><option value="">Todos os meses</option></select>
+    </div>
+    <label class="acheck"><input type="checkbox" id="aPend"> PDF pendente</label>
+    <button class="ana-clear" id="aClear">Limpar filtros</button>
+  </div>
+
+  <div class="ana-chips">
+    <div class="achip"><span class="achip-v" id="acCount">—</span><span class="achip-l">lançamentos</span></div>
+    <div class="achip"><span class="achip-v" id="acTotal">—</span><span class="achip-l">faturado</span></div>
+    <div class="achip"><span class="achip-v" id="acTicket">—</span><span class="achip-l">ticket médio</span></div>
+    <div class="adist">
+      <div class="adist-bar" id="aDist"></div>
+      <div class="adist-cap" id="aDistCap"></div>
+    </div>
+  </div>
+
+  <div class="ana-table-card">
+    <table class="ana-table">
+      <thead><tr><th>Mês</th><th>Cliente</th><th>Vertical</th><th>Nº NF</th><th class="num">Valor</th><th>PDF</th></tr></thead>
+      <tbody id="aBody"></tbody>
+    </table>
+    <div class="ana-pager">
+      <button id="aPrev" aria-label="Página anterior">‹</button>
+      <span id="aPage">—</span>
+      <button id="aNext" aria-label="Próxima página">›</button>
+    </div>
+  </div>
+</section>
+
+<div class="jump-toast" id="jumpToast">
+  <span>Filtros aplicados.</span>
+  <button class="jt-go" id="jumpGo">Ver na Visão Executiva</button>
+  <button class="jt-x" id="jumpX" aria-label="Fechar">×</button>
+</div>
 </main>
 
 <script>
@@ -851,6 +1116,7 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 
 let entries = [];
 let period = 'all'; // 'all' | 'YYYY-MM'
+let crossFilter = null; // filtro herdado da Visão Analítica: {search, vertical, cliente, pend}
 let areaChart = null;
 let abcChart = null;
 
@@ -894,7 +1160,7 @@ async function loadEntries() {
   while (true) {
     const { data, error } = await sb
       .from('lancamentos')
-      .select('mes, valor, cliente, vertical')
+      .select('mes, valor, cliente, vertical, doc, obs, pdf_url')
       .order('mes', { ascending: false })
       .order('id', { ascending: true })
       .range(from, from + PAGE - 1);
@@ -908,7 +1174,16 @@ async function loadEntries() {
 }
 
 function filtered() {
-  return period === 'all' ? entries : entries.filter(e => e.mes === period);
+  let list = entries;
+  if (crossFilter) {
+    const f = crossFilter;
+    list = list.filter(e =>
+      (!f.vertical || e.vertical === f.vertical) &&
+      (!f.cliente || e.cliente === f.cliente) &&
+      (!f.pend || !e.pdf_url) &&
+      (!f.search || `${e.cliente} ${e.doc || ''} ${e.obs || ''} ${e.vertical || ''}`.toLowerCase().includes(f.search)));
+  }
+  return period === 'all' ? list : list.filter(e => e.mes === period);
 }
 function sumBy(list, key) {
   const map = {};
@@ -1294,6 +1569,18 @@ function initMacros() {
   });
 }
 
+function renderCrossChip() {
+  const chip = document.getElementById('crossChip');
+  if (!crossFilter) { chip.hidden = true; return; }
+  const parts = [];
+  if (crossFilter.cliente) parts.push(crossFilter.cliente);
+  if (crossFilter.vertical) parts.push(crossFilter.vertical);
+  if (crossFilter.search) parts.push('“' + crossFilter.search + '”');
+  if (crossFilter.pend) parts.push('PDF pendente');
+  chip.innerHTML = 'Filtro do analítico: ' + escapeHtml(parts.join(' · ') || 'ativo') + ' &nbsp;✕';
+  chip.hidden = false;
+}
+
 function renderAll() {
   const list = filtered();
   renderPills();
@@ -1306,8 +1593,158 @@ function renderAll() {
   renderMacros(list);
   renderTicker();
   renderSparks();
+  renderCrossChip();
   document.getElementById('subLine').textContent =
     (period === 'all' ? 'Todos os meses consolidados' : 'Referência ' + mesLabel(period)) + ' · Meireles & Freitas';
+}
+
+/* ── Navegação entre abas ──────────────── */
+let anaInitialized = false;
+function switchView(v) {
+  const exec = v === 'exec';
+  document.getElementById('viewExec').classList.toggle('view-on', exec);
+  document.getElementById('viewAna').classList.toggle('view-on', !exec);
+  document.getElementById('navExec').classList.toggle('active', exec);
+  document.getElementById('navAna').classList.toggle('active', !exec);
+  if (!exec && !anaInitialized) { anaInitialized = true; renderAnaOptions(); renderAna(); }
+  if (exec) hideToast();
+}
+
+/* ── Visão Analítica ───────────────────── */
+const ANA_PER = 60;
+let anaPage = 1;
+let toastTimer = null;
+
+const $a = id => document.getElementById(id);
+
+function anaFilters() {
+  return {
+    search: $a('aSearch').value.trim().toLowerCase(),
+    vertical: $a('aVertical').value,
+    cliente: $a('aCliente').value,
+    mes: $a('aMes').value,
+    pend: $a('aPend').checked
+  };
+}
+function anaActive(f) { return !!(f.search || f.vertical || f.cliente || f.mes || f.pend); }
+
+function anaList() {
+  const f = anaFilters();
+  return entries.filter(e =>
+    (!f.vertical || e.vertical === f.vertical) &&
+    (!f.cliente || e.cliente === f.cliente) &&
+    (!f.mes || e.mes === f.mes) &&
+    (!f.pend || !e.pdf_url) &&
+    (!f.search || `${e.cliente} ${e.doc || ''} ${e.obs || ''} ${e.vertical || ''}`.toLowerCase().includes(f.search)));
+}
+
+function renderAnaOptions() {
+  const verts = [...new Set(entries.map(e => e.vertical).filter(Boolean))].sort();
+  const clis = [...new Set(entries.map(e => e.cliente).filter(Boolean))].sort();
+  const meses = monthTotals().map(([m]) => m);
+  $a('aVertical').innerHTML = '<option value="">Todas as verticais</option>' +
+    verts.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+  $a('aCliente').innerHTML = '<option value="">Todos os clientes</option>' +
+    clis.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+  $a('aMes').innerHTML = '<option value="">Todos os meses</option>' +
+    meses.map(m => `<option value="${m}">${mesLabel(m)}</option>`).join('');
+}
+
+const DIST_COLORS = ['#1a944d', '#3ab364', '#6ed08a', '#a4e845', '#d3f29b', 'rgba(234,245,238,.25)'];
+
+function renderAna(resetPage = true) {
+  if (resetPage) anaPage = 1;
+  const list = anaList();
+  const total = list.reduce((s, e) => s + Number(e.valor || 0), 0);
+  countUp($a('acCount'), list.length, v => Math.round(v).toLocaleString('pt-BR'));
+  countUp($a('acTotal'), total, fmtShort);
+  countUp($a('acTicket'), list.length ? total / list.length : 0, fmtShort);
+
+  // Distribuição por vertical (elemento gráfico do analítico)
+  const agg = sumBy(list, 'vertical');
+  const top = agg.slice(0, 5);
+  const rest = agg.slice(5).reduce((s, [, v]) => s + v, 0);
+  const segs = rest > 0 ? [...top, ['Outras', rest]] : top;
+  $a('aDist').innerHTML = segs.map(([nome, v], i) =>
+    `<i style="width:${total > 0 ? (v / total * 100).toFixed(2) : 0}%;background:${DIST_COLORS[i % DIST_COLORS.length]};" title="${escapeHtml(nome)}: ${fmtShort(v)}"></i>`).join('');
+  $a('aDistCap').textContent = top.slice(0, 3)
+    .map(([nome, v]) => `${nome} ${total > 0 ? (v / total * 100).toFixed(0) : 0}%`).join(' · ');
+
+  renderAnaTable(list);
+  maybeToast();
+}
+
+function renderAnaTable(list) {
+  const pages = Math.max(1, Math.ceil(list.length / ANA_PER));
+  anaPage = Math.min(anaPage, pages);
+  const slice = list.slice((anaPage - 1) * ANA_PER, anaPage * ANA_PER);
+  $a('aBody').innerHTML = slice.map(e => `
+    <tr>
+      <td>${mesLabel(e.mes)}</td>
+      <td>${escapeHtml(e.cliente)}</td>
+      <td><span class="vbadge">${escapeHtml(e.vertical || '—')}</span></td>
+      <td>${escapeHtml(e.doc || '—')}</td>
+      <td class="num">${fmtBRL(Number(e.valor || 0))}</td>
+      <td>${e.pdf_url
+        ? `<a class="pdf-ok" href="${escapeHtml(e.pdf_url)}" target="_blank" rel="noopener noreferrer" title="Abrir PDF"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></a>`
+        : `<span class="pdf-pend"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>pendente</span>`}</td>
+    </tr>`).join('') || `<tr><td colspan="6" style="text-align:center;color:var(--text-sec);padding:26px;">Nenhum lançamento para os filtros atuais.</td></tr>`;
+  $a('aPage').textContent = `${anaPage} / ${pages} · ${list.length.toLocaleString('pt-BR')} registros`;
+  $a('aPrev').disabled = anaPage <= 1;
+  $a('aNext').disabled = anaPage >= pages;
+}
+
+function maybeToast() {
+  const f = anaFilters();
+  const toast = $a('jumpToast');
+  if (!anaActive(f)) { hideToast(); return; }
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(hideToast, 9000);
+}
+function hideToast() {
+  $a('jumpToast').classList.remove('show');
+  clearTimeout(toastTimer);
+}
+
+function jumpToExec() {
+  const f = anaFilters();
+  crossFilter = (f.search || f.vertical || f.cliente || f.pend)
+    ? { search: f.search, vertical: f.vertical, cliente: f.cliente, pend: f.pend }
+    : null;
+  period = f.mes || 'all';
+  hideToast();
+  switchView('exec');
+  renderAll();
+}
+
+function debounce(fn, ms) {
+  let t;
+  return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+}
+
+function initAna() {
+  $a('navExec').addEventListener('click', () => switchView('exec'));
+  $a('navAna').addEventListener('click', () => switchView('ana'));
+  $a('aSearch').addEventListener('input', debounce(() => renderAna(), 260));
+  ['aVertical', 'aCliente', 'aMes', 'aPend'].forEach(id =>
+    $a(id).addEventListener('change', () => renderAna()));
+  $a('aClear').addEventListener('click', () => {
+    $a('aSearch').value = '';
+    $a('aVertical').value = '';
+    $a('aCliente').value = '';
+    $a('aMes').value = '';
+    $a('aPend').checked = false;
+    renderAna();
+  });
+  $a('aPrev').addEventListener('click', () => { anaPage--; renderAnaTable(anaList()); });
+  $a('aNext').addEventListener('click', () => { anaPage++; renderAnaTable(anaList()); });
+  $a('jumpGo').addEventListener('click', jumpToExec);
+  $a('jumpX').addEventListener('click', hideToast);
+  document.getElementById('crossChip').addEventListener('click', () => {
+    crossFilter = null;
+    renderAll();
+  });
 }
 
 /* Ticks decorativos do dial */
@@ -1332,6 +1769,7 @@ async function boot() {
     renderAll();
     initTilt();
     initMacros();
+    initAna();
     spawnParticles();
   } catch (e) {
     console.error(e);
