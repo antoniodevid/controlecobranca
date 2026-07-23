@@ -486,6 +486,83 @@
     box-shadow: 0 0 12px rgba(74,222,128,.15);
   }
 
+  /* ── Macro ABC: anéis concêntricos ───── */
+  .macro-abc { gap: 12px; }
+  .abc-macro-rings {
+    position: relative;
+    width: 152px;
+    height: 152px;
+    transform: translateZ(38px);
+    animation: ringsFloat 5.5s ease-in-out infinite;
+  }
+  @keyframes ringsFloat {
+    0%, 100% { transform: translateZ(38px) translateY(0); }
+    50% { transform: translateZ(38px) translateY(-8px); }
+  }
+  .abc-macro-rings svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+    overflow: visible;
+  }
+  .m-track { fill: none; stroke: rgba(234,245,238,.07); stroke-width: 9; }
+  .m-ring {
+    fill: none;
+    stroke-width: 9;
+    stroke-linecap: round;
+    transform-origin: 80px 80px;
+    transition: stroke-dasharray 1.25s cubic-bezier(.3,.8,.3,1);
+  }
+  .m-ring-a {
+    stroke: url(#mGrad);
+    filter: drop-shadow(0 0 8px var(--glow));
+    animation: orbit 26s linear infinite;
+  }
+  .m-ring-b {
+    stroke: var(--lima);
+    filter: drop-shadow(0 0 6px rgba(164,232,69,.3));
+    animation: orbit 36s linear infinite reverse;
+  }
+  .m-ring-c {
+    stroke: rgba(234,245,238,.30);
+    animation: orbit 48s linear infinite;
+  }
+  .abc-macro-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    transform: translateZ(58px);
+  }
+  .abc-macro-center b {
+    font-family: 'Sora', sans-serif;
+    font-size: 31px;
+    font-weight: 800;
+    letter-spacing: -.5px;
+    text-shadow: 0 0 24px rgba(74,222,128,.3);
+  }
+  .abc-macro-center i {
+    font-style: normal;
+    font-size: 9.5px;
+    letter-spacing: 1.3px;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--text-sec);
+    margin-top: 3px;
+  }
+  .macro-caption {
+    font-size: 12px;
+    color: var(--text-sec);
+    max-width: 240px;
+    text-align: center;
+    line-height: 1.5;
+    transform: translateZ(22px);
+  }
+  .macro-caption strong { color: var(--text); font-weight: 600; }
+
   .loading-veil {
     position: fixed;
     inset: 0;
@@ -599,7 +676,8 @@
     .card { animation: none; opacity: 1; transform: none; }
     .card.settled { transform: none; }
     .gauge-arc, .vbar-fill, .cli-bar span, .abc-bar i { transition: none; }
-    .ticker-track, .gauge-orbit, .macro-glyph { animation: none; }
+    .ticker-track, .gauge-orbit, .macro-glyph, .abc-macro-rings, .m-ring-a, .m-ring-b, .m-ring-c { animation: none; }
+    .m-ring { transition: none; }
     .fin-particles { display: none; }
     .has-macro .card-body { transition: none; }
     .open .macro { animation: none; opacity: 0; visibility: hidden; }
@@ -723,10 +801,26 @@
     </section>
 
     <section class="card abc-card has-macro" id="cardAbc">
-      <button class="macro" aria-label="Explorar curva ABC">
-        <span class="macro-glyph"><svg width="58" height="58" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></span>
-        <span class="macro-value" id="macroAbcVal">—</span>
+      <button class="macro macro-abc" aria-label="Explorar curva ABC">
+        <span class="abc-macro-rings">
+          <svg viewBox="0 0 160 160">
+            <defs>
+              <linearGradient id="mGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#1a944d"/>
+                <stop offset="100%" stop-color="#a4e845"/>
+              </linearGradient>
+            </defs>
+            <circle class="m-track" cx="80" cy="80" r="66"/>
+            <circle class="m-ring m-ring-a" id="mRingA" cx="80" cy="80" r="66" stroke-dasharray="0 415"/>
+            <circle class="m-track" cx="80" cy="80" r="50"/>
+            <circle class="m-ring m-ring-b" id="mRingB" cx="80" cy="80" r="50" stroke-dasharray="0 315"/>
+            <circle class="m-track" cx="80" cy="80" r="34"/>
+            <circle class="m-ring m-ring-c" id="mRingC" cx="80" cy="80" r="34" stroke-dasharray="0 214"/>
+          </svg>
+          <span class="abc-macro-center"><b id="macroAbcVal">—</b><i>grupo A</i></span>
+        </span>
         <span class="macro-name">Curva ABC · concentração</span>
+        <span class="macro-caption" id="macroAbcCap"></span>
         <span class="macro-hint"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg> Clique para explorar</span>
       </button>
       <div class="card-body">
@@ -1035,11 +1129,22 @@ function renderMacros(list) {
   const vAgg = sumBy(list, 'vertical');
   const cAgg = sumBy(list, 'cliente');
   const { groups, total } = computeABC(list);
-  const fatA = groups.A.reduce((s, [, v]) => s + v, 0);
-  const pctA = total > 0 ? fatA / total * 100 : 0;
+  const pctOf = g => total > 0 ? groups[g].reduce((s, [, v]) => s + v, 0) / total * 100 : 0;
+  const pctA = pctOf('A'), pctB = pctOf('B'), pctC = pctOf('C');
   document.getElementById('macroVertVal').textContent = vAgg.length + ' verticais';
   document.getElementById('macroCliVal').textContent = cAgg.length + ' clientes';
-  document.getElementById('macroAbcVal').textContent = pctA.toFixed(0) + '% no grupo A';
+  document.getElementById('macroAbcVal').textContent = pctA.toFixed(0) + '%';
+  document.getElementById('macroAbcCap').innerHTML =
+    `<strong>${groups.A.length} cliente${groups.A.length === 1 ? '' : 's'}</strong> concentra${groups.A.length === 1 ? '' : 'm'} <strong>${pctA.toFixed(0)}%</strong> de todo o faturamento`;
+  // Arcos proporcionais reais em cada anel
+  const setRing = (id, pct, r) => {
+    const C = 2 * Math.PI * r;
+    const arc = C * Math.min(pct, 100) / 100;
+    document.getElementById(id).style.strokeDasharray = `${arc.toFixed(1)} ${C.toFixed(1)}`;
+  };
+  setRing('mRingA', pctA, 66);
+  setRing('mRingB', pctB, 50);
+  setRing('mRingC', pctC, 34);
 }
 
 function renderTicker() {
