@@ -71,11 +71,18 @@
     z-index: 20;
   }
   .rail-logo {
-    width: 42px; height: 42px;
+    width: 44px; height: 44px;
     display: grid; place-items: center;
     margin-bottom: 18px;
   }
-  .rail-logo svg { display: block; }
+  .mf-mark {
+    width: 36px; height: 36px;
+    display: block;
+    background: #ece7da;
+    -webkit-mask: url('assets/brand/favicon-512.png') no-repeat center / contain;
+    mask: url('assets/brand/favicon-512.png') no-repeat center / contain;
+    filter: drop-shadow(0 0 10px rgba(164,232,69,.25));
+  }
   .rail-btn {
     width: 46px; height: 46px;
     border: none;
@@ -620,14 +627,13 @@
   .fin-p {
     position: absolute;
     bottom: -50px;
-    line-height: 0;
-    color: rgba(164,232,69,.14);
-    filter: drop-shadow(0 0 10px rgba(74,222,128,.22));
+    background: rgba(164,232,69,.16);
+    -webkit-mask: url('assets/brand/favicon-512.png') no-repeat center / contain;
+    mask: url('assets/brand/favicon-512.png') no-repeat center / contain;
     animation: floatUp linear infinite;
     user-select: none;
     will-change: transform;
   }
-  .fin-p svg { display: block; }
   @keyframes floatUp {
     from { transform: translateY(0) rotate(0deg); opacity: 0; }
     12% { opacity: 1; }
@@ -936,10 +942,8 @@
 <div class="fin-particles" id="finParticles"></div>
 
 <nav class="rail">
-  <div class="rail-logo">
-    <svg width="34" height="26" viewBox="0 0 34 26" fill="none" stroke="#a4e845" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M2 24 L9 8 L14 18 L20 3 L26 15 L32 24"/>
-    </svg>
+  <div class="rail-logo" title="Meireles &amp; Freitas">
+    <span class="mf-mark" role="img" aria-label="Meireles &amp; Freitas"></span>
   </div>
   <button class="rail-btn active" id="navExec" title="Visão Executiva">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg>
@@ -1536,18 +1540,14 @@ function renderSparks() {
 function spawnParticles() {
   if (reduceMotion) return;
   const wrap = document.getElementById('finParticles');
-  // Símbolo Meireles & Freitas (três picos), o mesmo do logo da barra lateral
-  const mark = w => {
-    const h = Math.round(w * 26 / 34);
-    return `<svg width="${w}" height="${h}" viewBox="0 0 34 26" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M2 24 L9 8 L14 18 L20 3 L26 15 L32 24"/></svg>`;
-  };
+  // Símbolo oficial Meireles & Freitas via máscara CSS (favicon com fundo transparente)
   let html = '';
   for (let i = 0; i < 14; i++) {
-    const w = 15 + Math.round(Math.random() * 22);
+    const w = 18 + Math.round(Math.random() * 22);
     const left = Math.random() * 100;
     const dur = 16 + Math.random() * 16;
     const delay = -Math.random() * dur;
-    html += `<span class="fin-p" style="left:${left.toFixed(1)}%;animation-duration:${dur.toFixed(1)}s;animation-delay:${delay.toFixed(1)}s">${mark(w)}</span>`;
+    html += `<span class="fin-p" style="left:${left.toFixed(1)}%;width:${w}px;height:${w}px;animation-duration:${dur.toFixed(1)}s;animation-delay:${delay.toFixed(1)}s"></span>`;
   }
   wrap.innerHTML = html;
 }
