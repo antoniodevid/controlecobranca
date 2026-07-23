@@ -150,11 +150,11 @@
   /* ── Grid de cards ───────────────────── */
   .grid {
     display: grid;
-    grid-template-columns: 330px repeat(3, minmax(0, 1fr));
+    grid-template-columns: 330px repeat(2, minmax(0, 1fr)) 300px;
     grid-template-areas:
-      "gauge kpi1 kpi2 kpi3"
-      "gauge chart chart chart"
-      "vert vert cli abc";
+      "gauge kpi1 kpi2 abc"
+      "gauge chart chart abc"
+      "vert vert cli cli";
     gap: 16px;
     perspective: 1600px;
   }
@@ -268,7 +268,7 @@
 
   /* ── KPIs ────────────────────────────── */
   .kpi { position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; min-height: 118px; }
-  .kpi-1 { grid-area: kpi1; } .kpi-2 { grid-area: kpi2; } .kpi-3 { grid-area: kpi3; }
+  .kpi-1 { grid-area: kpi1; } .kpi-2 { grid-area: kpi2; }
   .kpi-top { display: flex; align-items: center; justify-content: space-between; }
   .kpi-icon {
     width: 40px; height: 40px;
@@ -345,8 +345,8 @@
 
   /* ── ABC ─────────────────────────────── */
   .abc-card { grid-area: abc; display: flex; flex-direction: column; }
-  .abc-box { position: relative; flex: 1; min-height: 180px; display: grid; place-items: center; }
-  .abc-box canvas { max-height: 185px; }
+  .abc-box { position: relative; flex: 1; min-height: 200px; display: grid; place-items: center; }
+  .abc-box canvas { max-height: 240px; }
   .abc-center {
     position: absolute;
     inset: 0;
@@ -450,7 +450,7 @@
     .grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
       grid-template-areas:
-        "gauge gauge" "kpi1 kpi2" "kpi3 kpi3"
+        "gauge gauge" "kpi1 kpi2"
         "chart chart" "vert vert" "cli abc";
     }
   }
@@ -468,7 +468,7 @@
     .rail-logo, .rail-spacer { display: none; }
     .grid {
       grid-template-columns: 1fr;
-      grid-template-areas: "gauge" "kpi1" "kpi2" "kpi3" "chart" "vert" "cli" "abc";
+      grid-template-areas: "gauge" "kpi1" "kpi2" "chart" "vert" "cli" "abc";
     }
     .vbar-row { grid-template-columns: 120px 1fr 84px; }
   }
@@ -560,17 +560,6 @@
         <div class="kpi-name">Notas lançadas</div>
       </div>
       <svg class="spark" viewBox="0 0 100 28" preserveAspectRatio="none"><polyline id="sparkLanc" points=""/></svg>
-    </section>
-
-    <section class="card kpi kpi-3">
-      <div class="kpi-top">
-        <div class="kpi-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 3v18h18"/><path d="m7 15 4-6 4 3 5-8"/></svg></div>
-      </div>
-      <div>
-        <div class="kpi-value" id="kpiTicket">—</div>
-        <div class="kpi-name">Ticket médio por nota</div>
-      </div>
-      <svg class="spark" viewBox="0 0 100 28" preserveAspectRatio="none"><polyline id="sparkTicket" points=""/></svg>
     </section>
 
     <section class="card chart-card">
@@ -729,7 +718,6 @@ function renderKpis(list) {
   const n = list.length;
   countUp(document.getElementById('kpiFat'), fat, fmtShort);
   countUp(document.getElementById('kpiLanc'), n, v => Math.round(v).toLocaleString('pt-BR'));
-  countUp(document.getElementById('kpiTicket'), n ? fat / n : 0, fmtShort);
 }
 
 function renderArea() {
@@ -895,8 +883,7 @@ function renderSparks() {
   const meses = totals.map(([m]) => m);
   const series = {
     sparkFat: meses.map(m => byMonth[m].fat),
-    sparkLanc: meses.map(m => byMonth[m].n),
-    sparkTicket: meses.map(m => byMonth[m].n ? byMonth[m].fat / byMonth[m].n : 0)
+    sparkLanc: meses.map(m => byMonth[m].n)
   };
   Object.entries(series).forEach(([id, data]) => {
     const el = document.getElementById(id);
