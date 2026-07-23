@@ -940,7 +940,14 @@ function initTilt() {
     return;
   }
   document.querySelectorAll('.card').forEach(card => {
-    card.addEventListener('animationend', () => card.classList.add('settled'), { once: true });
+    // A animação de entrada pode já ter terminado antes deste listener existir
+    const anims = card.getAnimations ? card.getAnimations() : [];
+    if (anims.length === 0 || anims.every(a => a.playState === 'finished')) {
+      card.classList.add('settled');
+    } else {
+      card.addEventListener('animationend', () => card.classList.add('settled'), { once: true });
+      setTimeout(() => card.classList.add('settled'), 1600); // rede de segurança
+    }
     card.addEventListener('pointermove', e => {
       if (!card.classList.contains('settled')) return;
       const r = card.getBoundingClientRect();
