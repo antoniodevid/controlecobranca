@@ -619,11 +619,14 @@ function countUp(el, target, format) {
   if (reduceMotion) { el.textContent = format(target); return; }
   const dur = 1100;
   const t0 = performance.now();
+  // rAF não dispara em abas ocultas/ocluídas — garante o valor final de qualquer forma
+  const guard = setTimeout(() => { el.textContent = format(target); }, dur + 300);
   function frame(t) {
     const p = Math.min((t - t0) / dur, 1);
     const eased = 1 - Math.pow(1 - p, 3);
     el.textContent = format(target * eased);
     if (p < 1) requestAnimationFrame(frame);
+    else clearTimeout(guard);
   }
   requestAnimationFrame(frame);
 }
