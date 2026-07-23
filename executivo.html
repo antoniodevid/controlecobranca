@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visão Executiva — Faturamento M&amp;F</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://unpkg.com/chart.js@4/dist/chart.umd.js"></script>
+<style>
+  :root {
+    --bg: #081210;
+    --surface: #0e1c15;
+    --surface-2: #132419;
+    --stroke: rgba(234,245,238,.07);
+    --stroke-strong: rgba(164,232,69,.22);
+    --verde: #1a944d;
+    --lima: #a4e845;
+    --glow: rgba(74,222,128,.32);
+    --amber: #f0a44a;
+    --text: #eaf5ee;
+    --text-sec: #7e998b;
+    --radius: 22px;
+    --sidebar-w: 76px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { color-scheme: dark; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  /* Atmosfera ambiente: dois halos verdes fixos, como a luz difusa do vídeo */
+  body::before, body::after {
+    content: '';
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(120px);
+    pointer-events: none;
+    z-index: 0;
+  }
+  body::before {
+    width: 560px; height: 560px;
+    background: radial-gradient(circle, rgba(26,148,77,.16), transparent 70%);
+    top: -180px; left: 22%;
+  }
+  body::after {
+    width: 440px; height: 440px;
+    background: radial-gradient(circle, rgba(164,232,69,.07), transparent 70%);
+    bottom: -140px; right: -80px;
+  }
+
+  /* ── Sidebar ─────────────────────────── */
+  .rail {
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    width: var(--sidebar-w);
+    background: rgba(10,20,16,.85);
+    backdrop-filter: blur(12px);
+    border-right: 1px solid var(--stroke);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 18px 0;
+    gap: 8px;
+    z-index: 20;
+  }
+  .rail-logo {
+    width: 42px; height: 42px;
+    display: grid; place-items: center;
+    margin-bottom: 18px;
+  }
+  .rail-logo svg { display: block; }
+  .rail-btn {
+    width: 46px; height: 46px;
+    border: none;
+    border-radius: 14px;
+    background: transparent;
+    color: var(--text-sec);
+    display: grid; place-items: center;
+    cursor: pointer;
+    transition: background .2s, color .2s, box-shadow .2s;
+    text-decoration: none;
+  }
+  .rail-btn:hover { background: rgba(234,245,238,.05); color: var(--text); }
+  .rail-btn.active {
+    background: linear-gradient(135deg, rgba(26,148,77,.35), rgba(164,232,69,.14));
+    color: var(--lima);
+    box-shadow: 0 0 22px rgba(74,222,128,.22), inset 0 0 0 1px var(--stroke-strong);
+  }
+  .rail-spacer { flex: 1; }
+
+  /* ── Layout principal ────────────────── */
+  .main {
+    position: relative;
+    z-index: 1;
+    margin-left: var(--sidebar-w);
+    padding: 30px 34px 44px;
+    max-width: 1440px;
+  }
+  .topbar {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 26px;
+  }
+  .topbar h1 {
+    font-family: 'Sora', sans-serif;
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -.5px;
+  }
+  .topbar h1 span { color: var(--lima); }
+  .topbar-sub { color: var(--text-sec); font-size: 13px; margin-top: 4px; }
+  .period-pills {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    background: var(--surface);
+    border: 1px solid var(--stroke);
+    border-radius: 16px;
+    padding: 5px;
+  }
+  .pill {
+    border: none;
+    background: transparent;
+    color: var(--text-sec);
+    font-family: 'Inter', sans-serif;
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 8px 14px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background .2s, color .2s, box-shadow .2s;
+  }
+  .pill:hover { color: var(--text); }
+  .pill.active {
+    background: linear-gradient(135deg, var(--verde), #157a3f);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(26,148,77,.4);
+  }
+
+  /* ── Grid de cards ───────────────────── */
+  .grid {
+    display: grid;
+    grid-template-columns: 380px 1fr 1fr 1fr;
+    grid-template-areas:
+      "gauge kpi1 kpi2 kpi3"
+      "gauge chart chart chart"
+      "vert vert cli abc";
+    gap: 18px;
+  }
+  .card {
+    background: linear-gradient(160deg, var(--surface-2), var(--surface));
+    border: 1px solid var(--stroke);
+    border-radius: var(--radius);
+    padding: 22px;
+    opacity: 0;
+    transform: translateY(18px);
+    animation: cardIn .55s cubic-bezier(.22,.9,.36,1) forwards;
+    transition: transform .25s, box-shadow .25s, border-color .25s;
+  }
+  .card:hover {
+    transform: translateY(-3px);
+    border-color: var(--stroke-strong);
+    box-shadow: 0 14px 40px rgba(0,0,0,.45), 0 0 24px rgba(74,222,128,.07);
+  }
+  @keyframes cardIn { to { opacity: 1; transform: translateY(0); } }
+  .card:nth-child(1) { animation-delay: .05s; }
+  .card:nth-child(2) { animation-delay: .12s; }
+  .card:nth-child(3) { animation-delay: .19s; }
+  .card:nth-child(4) { animation-delay: .26s; }
+  .card:nth-child(5) { animation-delay: .33s; }
+  .card:nth-child(6) { animation-delay: .40s; }
+  .card:nth-child(7) { animation-delay: .47s; }
+  .card:nth-child(8) { animation-delay: .54s; }
+
+  .card-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--text-sec);
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 14px;
+  }
+  .card-label::before {
+    content: '';
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--lima);
+    box-shadow: 0 0 8px var(--glow);
+  }
+
+  /* ── Gauge (herói) ───────────────────── */
+  .gauge-card {
+    grid-area: gauge;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 28px 22px;
+  }
+  .gauge-wrap { position: relative; width: 250px; height: 250px; margin: 8px 0 4px; }
+  .gauge-wrap svg { transform: rotate(-90deg); overflow: visible; }
+  .gauge-track { fill: none; stroke: rgba(234,245,238,.07); stroke-width: 14; }
+  .gauge-arc {
+    fill: none;
+    stroke: url(#gaugeGrad);
+    stroke-width: 14;
+    stroke-linecap: round;
+    filter: drop-shadow(0 0 10px var(--glow));
+    transition: stroke-dashoffset 1.4s cubic-bezier(.3,.8,.3,1);
+  }
+  .gauge-ticks line { stroke: rgba(234,245,238,.14); stroke-width: 2; }
+  .gauge-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+  .gauge-value {
+    font-family: 'Sora', sans-serif;
+    font-size: 40px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    line-height: 1;
+  }
+  .gauge-unit { font-size: 12px; color: var(--text-sec); margin-top: 7px; font-weight: 600; }
+  .gauge-pct {
+    margin-top: 10px;
+    font-family: 'Sora', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--lima);
+  }
+  .gauge-foot {
+    margin-top: 14px;
+    font-size: 12.5px;
+    color: var(--text-sec);
+    text-align: center;
+    line-height: 1.5;
+  }
+  .gauge-foot strong { color: var(--text); font-weight: 600; }
+
+  /* ── KPIs ────────────────────────────── */
+  .kpi { display: flex; flex-direction: column; justify-content: space-between; min-height: 118px; }
+  .kpi-1 { grid-area: kpi1; } .kpi-2 { grid-area: kpi2; } .kpi-3 { grid-area: kpi3; }
+  .kpi-top { display: flex; align-items: center; justify-content: space-between; }
+  .kpi-icon {
+    width: 40px; height: 40px;
+    border-radius: 13px;
+    display: grid; place-items: center;
+    background: linear-gradient(135deg, rgba(26,148,77,.35), rgba(164,232,69,.12));
+    color: var(--lima);
+    box-shadow: inset 0 0 0 1px var(--stroke-strong);
+  }
+  .kpi-value {
+    font-family: 'Sora', sans-serif;
+    font-size: 27px;
+    font-weight: 800;
+    letter-spacing: -.6px;
+    margin-top: 12px;
+  }
+  .kpi-name { font-size: 12px; color: var(--text-sec); font-weight: 600; margin-top: 4px; }
+
+  /* ── Gráfico de evolução ─────────────── */
+  .chart-card { grid-area: chart; min-height: 280px; }
+  .chart-box { position: relative; height: 218px; }
+
+  /* ── Verticais ───────────────────────── */
+  .vert-card { grid-area: vert; }
+  .vbar-row { display: grid; grid-template-columns: 190px 1fr 90px; align-items: center; gap: 12px; padding: 7px 0; }
+  .vbar-name { font-size: 12.5px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .vbar-track { height: 9px; border-radius: 6px; background: rgba(234,245,238,.06); overflow: hidden; }
+  .vbar-fill {
+    height: 100%;
+    border-radius: 6px;
+    background: linear-gradient(90deg, var(--verde), var(--lima));
+    box-shadow: 0 0 10px var(--glow);
+    width: 0;
+    transition: width 1.1s cubic-bezier(.3,.8,.3,1);
+  }
+  .vbar-val { font-family: 'Sora', sans-serif; font-size: 12.5px; font-weight: 700; text-align: right; }
+
+  /* ── Top clientes ────────────────────── */
+  .cli-card { grid-area: cli; }
+  .cli-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; }
+  .cli-avatar {
+    width: 36px; height: 36px;
+    flex-shrink: 0;
+    border-radius: 12px;
+    display: grid; place-items: center;
+    font-family: 'Sora', sans-serif;
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--lima);
+    background: rgba(26,148,77,.18);
+    box-shadow: inset 0 0 0 1px var(--stroke-strong);
+  }
+  .cli-info { flex: 1; min-width: 0; }
+  .cli-name { font-size: 12.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cli-bar { height: 5px; border-radius: 4px; background: rgba(234,245,238,.06); margin-top: 5px; overflow: hidden; }
+  .cli-bar span { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--verde), var(--lima)); width: 0; transition: width 1.1s cubic-bezier(.3,.8,.3,1); }
+  .cli-val { font-family: 'Sora', sans-serif; font-size: 12.5px; font-weight: 700; flex-shrink: 0; }
+
+  /* ── ABC ─────────────────────────────── */
+  .abc-card { grid-area: abc; display: flex; flex-direction: column; }
+  .abc-box { position: relative; flex: 1; min-height: 180px; display: grid; place-items: center; }
+  .abc-box canvas { max-height: 185px; }
+  .abc-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    text-align: center;
+  }
+  .abc-center-value { font-family: 'Sora', sans-serif; font-size: 21px; font-weight: 800; }
+  .abc-center-label { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--text-sec); margin-top: 3px; }
+  .abc-legend { display: flex; justify-content: center; gap: 14px; margin-top: 12px; font-size: 11.5px; color: var(--text-sec); }
+  .abc-legend b { color: var(--text); font-weight: 700; }
+  .abc-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; vertical-align: 0; }
+
+  .loading-veil {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    display: grid;
+    place-items: center;
+    z-index: 50;
+    transition: opacity .4s;
+  }
+  .loading-veil.done { opacity: 0; pointer-events: none; }
+  .spinner {
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    border: 3px solid rgba(164,232,69,.15);
+    border-top-color: var(--lima);
+    animation: spin .9s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 1180px) {
+    .grid {
+      grid-template-columns: 1fr 1fr;
+      grid-template-areas:
+        "gauge gauge" "kpi1 kpi2" "kpi3 kpi3"
+        "chart chart" "vert vert" "cli abc";
+    }
+  }
+  @media (max-width: 720px) {
+    .main { margin-left: 0; padding: 20px 16px 90px; }
+    .rail {
+      top: auto; bottom: 0; right: 0; left: 0;
+      width: auto; height: 66px;
+      flex-direction: row;
+      justify-content: center;
+      padding: 0 12px;
+      border-right: none;
+      border-top: 1px solid var(--stroke);
+    }
+    .rail-logo, .rail-spacer { display: none; }
+    .grid {
+      grid-template-columns: 1fr;
+      grid-template-areas: "gauge" "kpi1" "kpi2" "kpi3" "chart" "vert" "cli" "abc";
+    }
+    .vbar-row { grid-template-columns: 120px 1fr 84px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .card { animation: none; opacity: 1; transform: none; }
+    .gauge-arc, .vbar-fill, .cli-bar span { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="loading-veil" id="veil"><div class="spinner"></div></div>
+
+<nav class="rail">
+  <div class="rail-logo">
+    <svg width="34" height="26" viewBox="0 0 34 26" fill="none" stroke="#a4e845" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2 24 L9 8 L14 18 L20 3 L26 15 L32 24"/>
+    </svg>
+  </div>
+  <button class="rail-btn active" title="Visão executiva">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg>
+  </button>
+  <a class="rail-btn" href="index.html" title="Voltar ao painel completo">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+  </a>
+  <div class="rail-spacer"></div>
+  <button class="rail-btn" id="logoutBtn" title="Sair">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+  </button>
+</nav>
+
+<main class="main">
+  <div class="topbar">
+    <div>
+      <h1>Visão <span>Executiva</span></h1>
+      <div class="topbar-sub" id="subLine">Faturamento consolidado · Meireles &amp; Freitas</div>
+    </div>
+    <div class="period-pills" id="pills"></div>
+  </div>
+
+  <div class="grid">
+    <section class="card gauge-card">
+      <div class="card-label" style="align-self:flex-start;">Performance do período</div>
+      <div class="gauge-wrap">
+        <svg width="250" height="250" viewBox="0 0 250 250">
+          <defs>
+            <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#1a944d"/>
+              <stop offset="100%" stop-color="#a4e845"/>
+            </linearGradient>
+          </defs>
+          <g class="gauge-ticks" id="gaugeTicks"></g>
+          <circle class="gauge-track" cx="125" cy="125" r="96"/>
+          <circle class="gauge-arc" id="gaugeArc" cx="125" cy="125" r="96"/>
+        </svg>
+        <div class="gauge-center">
+          <div class="gauge-value" id="gaugeValue">—</div>
+          <div class="gauge-unit">faturado no período</div>
+          <div class="gauge-pct" id="gaugePct"></div>
+        </div>
+      </div>
+      <div class="gauge-foot" id="gaugeFoot"></div>
+    </section>
+
+    <section class="card kpi kpi-1">
+      <div class="kpi-top">
+        <div class="kpi-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+      </div>
+      <div>
+        <div class="kpi-value" id="kpiFat">—</div>
+        <div class="kpi-name">Faturamento total</div>
+      </div>
+    </section>
+
+    <section class="card kpi kpi-2">
+      <div class="kpi-top">
+        <div class="kpi-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+      </div>
+      <div>
+        <div class="kpi-value" id="kpiLanc">—</div>
+        <div class="kpi-name">Notas lançadas</div>
+      </div>
+    </section>
+
+    <section class="card kpi kpi-3">
+      <div class="kpi-top">
+        <div class="kpi-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 3v18h18"/><path d="m7 15 4-6 4 3 5-8"/></svg></div>
+      </div>
+      <div>
+        <div class="kpi-value" id="kpiTicket">—</div>
+        <div class="kpi-name">Ticket médio por nota</div>
+      </div>
+    </section>
+
+    <section class="card chart-card">
+      <div class="card-label">Evolução mensal do faturamento</div>
+      <div class="chart-box"><canvas id="areaChart"></canvas></div>
+    </section>
+
+    <section class="card vert-card">
+      <div class="card-label">Faturamento por vertical</div>
+      <div id="vertList"></div>
+    </section>
+
+    <section class="card cli-card">
+      <div class="card-label">Top clientes</div>
+      <div id="cliList"></div>
+    </section>
+
+    <section class="card abc-card">
+      <div class="card-label">Curva ABC</div>
+      <div class="abc-box">
+        <canvas id="abcChart"></canvas>
+        <div class="abc-center">
+          <div class="abc-center-value" id="abcCenter">—</div>
+          <div class="abc-center-label">faturado</div>
+        </div>
+      </div>
+      <div class="abc-legend" id="abcLegend"></div>
+    </section>
+  </div>
+</main>
+
+<script>
+const SUPABASE_URL = 'https://odotkashembevyjekkzg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9kb3RrYXNoZW1iZXZ5amVra3pnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MTIwMzYsImV4cCI6MjA5NzI4ODAzNn0.7iAChAtLxpwsaOy2jRsq77u3vwq_KvQWqPJkHGHK4I0';
+
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: { persistSession: true, autoRefreshToken: true }
+});
+
+let entries = [];
+let period = 'all'; // 'all' | 'YYYY-MM'
+let areaChart = null;
+let abcChart = null;
+
+const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+const fmtBRL = v => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const fmtShort = v => {
+  if (v >= 1e6) return 'R$ ' + (v / 1e6).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + 'M';
+  if (v >= 1e3) return 'R$ ' + (v / 1e3).toLocaleString('pt-BR', { maximumFractionDigits: 0 }) + 'K';
+  return fmtBRL(v);
+};
+const mesLabel = m => { const [y, mm] = m.split('-'); return MESES[parseInt(mm, 10) - 1] + '/' + y.slice(2); };
+
+/* Count-up animado (respeita prefers-reduced-motion) */
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function countUp(el, target, format) {
+  if (reduceMotion) { el.textContent = format(target); return; }
+  const dur = 1100;
+  const t0 = performance.now();
+  function frame(t) {
+    const p = Math.min((t - t0) / dur, 1);
+    const eased = 1 - Math.pow(1 - p, 3);
+    el.textContent = format(target * eased);
+    if (p < 1) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ── Dados ─────────────────────────────── */
+async function loadEntries() {
+  const PAGE = 1000;
+  let all = [];
+  let from = 0;
+  while (true) {
+    const { data, error } = await sb
+      .from('lancamentos')
+      .select('mes, valor, cliente, vertical')
+      .order('mes', { ascending: false })
+      .order('id', { ascending: true })
+      .range(from, from + PAGE - 1);
+    if (error) throw error;
+    if (!data || data.length === 0) break;
+    all = all.concat(data);
+    if (data.length < PAGE) break;
+    from += PAGE;
+  }
+  entries = all;
+}
+
+function filtered() {
+  return period === 'all' ? entries : entries.filter(e => e.mes === period);
+}
+function sumBy(list, key) {
+  const map = {};
+  list.forEach(e => { const k = e[key] || '—'; map[k] = (map[k] || 0) + Number(e.valor || 0); });
+  return Object.entries(map).sort((a, b) => b[1] - a[1]);
+}
+function monthTotals() { return sumBy(entries, 'mes').sort((a, b) => a[0].localeCompare(b[0])); }
+
+function computeABC(list) {
+  const clients = sumBy(list, 'cliente');
+  const total = clients.reduce((s, [, v]) => s + v, 0);
+  const groups = { A: [], B: [], C: [] };
+  let acc = 0;
+  clients.forEach(([nome, v]) => {
+    acc += v;
+    const pct = acc / total * 100;
+    if (pct <= 75 || groups.A.length === 0) groups.A.push([nome, v]);
+    else if (pct <= 95) groups.B.push([nome, v]);
+    else groups.C.push([nome, v]);
+  });
+  return { groups, total };
+}
+
+/* ── Render ────────────────────────────── */
+function renderPills() {
+  const months = monthTotals().map(([m]) => m);
+  const pills = document.getElementById('pills');
+  pills.innerHTML = '';
+  const mk = (val, label) => {
+    const b = document.createElement('button');
+    b.className = 'pill' + (period === val ? ' active' : '');
+    b.textContent = label;
+    b.onclick = () => { period = val; renderAll(); };
+    pills.appendChild(b);
+  };
+  mk('all', 'Totalidade');
+  months.forEach(m => mk(m, mesLabel(m)));
+}
+
+function renderGauge(list) {
+  const totals = monthTotals();
+  const best = totals.reduce((mx, cur) => cur[1] > mx[1] ? cur : mx, ['', 0]);
+  const fat = list.reduce((s, e) => s + Number(e.valor || 0), 0);
+  const nMeses = period === 'all' ? Math.max(totals.length, 1) : 1;
+  const mediaMensal = fat / nMeses;
+  const pct = best[1] > 0 ? mediaMensal / best[1] * 100 : 0;
+
+  const arc = document.getElementById('gaugeArc');
+  const C = 2 * Math.PI * 96;
+  arc.style.strokeDasharray = C;
+  arc.style.strokeDashoffset = C;
+  requestAnimationFrame(() => {
+    arc.style.strokeDashoffset = C * (1 - Math.min(pct, 100) / 100);
+  });
+
+  countUp(document.getElementById('gaugeValue'), fat, fmtShort);
+  document.getElementById('gaugePct').textContent = pct.toFixed(0) + '%' + (period === 'all' ? ' · média mensal' : '');
+  document.getElementById('gaugeFoot').innerHTML = period === 'all'
+    ? `Média mensal de <strong>${fmtShort(mediaMensal)}</strong> frente ao melhor mês, <strong>${mesLabel(best[0])}</strong> (${fmtShort(best[1])}).`
+    : `Este mês representa <strong>${pct.toFixed(0)}%</strong> do melhor mês, <strong>${mesLabel(best[0])}</strong> (${fmtShort(best[1])}).`;
+}
+
+function renderKpis(list) {
+  const fat = list.reduce((s, e) => s + Number(e.valor || 0), 0);
+  const n = list.length;
+  countUp(document.getElementById('kpiFat'), fat, fmtShort);
+  countUp(document.getElementById('kpiLanc'), n, v => Math.round(v).toLocaleString('pt-BR'));
+  countUp(document.getElementById('kpiTicket'), n ? fat / n : 0, fmtShort);
+}
+
+function renderArea() {
+  const totals = monthTotals();
+  const ctx = document.getElementById('areaChart').getContext('2d');
+  const grad = ctx.createLinearGradient(0, 0, 0, 220);
+  grad.addColorStop(0, 'rgba(164,232,69,.32)');
+  grad.addColorStop(1, 'rgba(26,148,77,0)');
+  const labels = totals.map(([m]) => mesLabel(m));
+  const data = totals.map(([, v]) => v);
+  const ptColors = totals.map(([m]) => (period !== 'all' && m === period) ? '#a4e845' : 'rgba(164,232,69,.55)');
+  const ptRadius = totals.map(([m]) => (period !== 'all' && m === period) ? 6 : 3.5);
+
+  if (areaChart) areaChart.destroy();
+  areaChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets: [{
+      data,
+      borderColor: '#a4e845',
+      borderWidth: 2.5,
+      backgroundColor: grad,
+      fill: true,
+      tension: .42,
+      pointBackgroundColor: ptColors,
+      pointBorderColor: 'transparent',
+      pointRadius: ptRadius,
+      pointHoverRadius: 7
+    }]},
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: reduceMotion ? false : { duration: 1200, easing: 'easeOutQuart' },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#132419',
+          borderColor: 'rgba(164,232,69,.25)',
+          borderWidth: 1,
+          titleColor: '#eaf5ee',
+          bodyColor: '#a4e845',
+          padding: 12,
+          cornerRadius: 12,
+          displayColors: false,
+          callbacks: { label: c => fmtBRL(c.parsed.y) }
+        }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: '#7e998b', font: { family: 'Inter', size: 11 } } },
+        y: {
+          grid: { color: 'rgba(234,245,238,.05)' },
+          ticks: { color: '#7e998b', font: { family: 'Inter', size: 11 }, callback: v => fmtShort(v) }
+        }
+      }
+    }
+  });
+}
+
+function renderVerticais(list) {
+  const rows = sumBy(list, 'vertical').slice(0, 7);
+  const max = rows.length ? rows[0][1] : 1;
+  const wrap = document.getElementById('vertList');
+  wrap.innerHTML = rows.map(([nome, v]) => `
+    <div class="vbar-row">
+      <div class="vbar-name" title="${nome}">${nome}</div>
+      <div class="vbar-track"><div class="vbar-fill" data-w="${(v / max * 100).toFixed(1)}"></div></div>
+      <div class="vbar-val">${fmtShort(v)}</div>
+    </div>`).join('');
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    wrap.querySelectorAll('.vbar-fill').forEach(el => { el.style.width = el.dataset.w + '%'; });
+  }));
+}
+
+function initials(nome) {
+  return nome.split(/\s+/).filter(w => w.length > 2).slice(0, 2).map(w => w[0]).join('').toUpperCase() || nome.slice(0, 2).toUpperCase();
+}
+
+function renderClientes(list) {
+  const rows = sumBy(list, 'cliente').slice(0, 6);
+  const max = rows.length ? rows[0][1] : 1;
+  const wrap = document.getElementById('cliList');
+  wrap.innerHTML = rows.map(([nome, v]) => `
+    <div class="cli-row">
+      <div class="cli-avatar">${initials(nome)}</div>
+      <div class="cli-info">
+        <div class="cli-name" title="${nome}">${nome}</div>
+        <div class="cli-bar"><span data-w="${(v / max * 100).toFixed(1)}"></span></div>
+      </div>
+      <div class="cli-val">${fmtShort(v)}</div>
+    </div>`).join('');
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    wrap.querySelectorAll('.cli-bar span').forEach(el => { el.style.width = el.dataset.w + '%'; });
+  }));
+}
+
+function renderAbc(list) {
+  const { groups, total } = computeABC(list);
+  const vals = ['A', 'B', 'C'].map(g => groups[g].reduce((s, [, v]) => s + v, 0));
+  const cores = ['#1a944d', '#a4e845', 'rgba(234,245,238,.22)'];
+  const ctx = document.getElementById('abcChart').getContext('2d');
+  if (abcChart) abcChart.destroy();
+  abcChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: { labels: ['A', 'B', 'C'], datasets: [{
+      data: vals,
+      backgroundColor: cores,
+      borderColor: '#0e1c15',
+      borderWidth: 4,
+      borderRadius: 8,
+      hoverOffset: 6
+    }]},
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '72%',
+      animation: reduceMotion ? false : { animateRotate: true, duration: 1100, easing: 'easeOutQuart' },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#132419',
+          borderColor: 'rgba(164,232,69,.25)',
+          borderWidth: 1,
+          titleColor: '#eaf5ee',
+          bodyColor: '#a4e845',
+          padding: 12,
+          cornerRadius: 12,
+          displayColors: false,
+          callbacks: { label: c => `Grupo ${c.label}: ${fmtBRL(c.parsed)}` }
+        }
+      }
+    }
+  });
+  countUp(document.getElementById('abcCenter'), total, fmtShort);
+  document.getElementById('abcLegend').innerHTML = ['A', 'B', 'C'].map((g, i) =>
+    `<span><span class="abc-dot" style="background:${cores[i]}"></span><b>${g}</b> · ${groups[g].length} cli.</span>`).join('');
+}
+
+function renderAll() {
+  const list = filtered();
+  renderPills();
+  renderGauge(list);
+  renderKpis(list);
+  renderArea();
+  renderVerticais(list);
+  renderClientes(list);
+  renderAbc(list);
+  document.getElementById('subLine').textContent =
+    (period === 'all' ? 'Todos os meses consolidados' : 'Referência ' + mesLabel(period)) + ' · Meireles & Freitas';
+}
+
+/* Ticks decorativos do dial */
+(function drawTicks() {
+  const g = document.getElementById('gaugeTicks');
+  let html = '';
+  for (let i = 0; i < 48; i++) {
+    const a = i / 48 * 2 * Math.PI;
+    const x1 = 125 + Math.cos(a) * 114, y1 = 125 + Math.sin(a) * 114;
+    const x2 = 125 + Math.cos(a) * 119, y2 = 125 + Math.sin(a) * 119;
+    html += `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"/>`;
+  }
+  g.innerHTML = html;
+})();
+
+/* ── Boot ──────────────────────────────── */
+async function boot() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { location.replace('index.html'); return; }
+  try {
+    await loadEntries();
+    renderAll();
+  } catch (e) {
+    console.error(e);
+    document.getElementById('subLine').textContent = 'Erro ao carregar dados. Recarregue a página.';
+  }
+  document.getElementById('veil').classList.add('done');
+}
+
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  await sb.auth.signOut();
+  location.replace('index.html');
+});
+sb.auth.onAuthStateChange((ev) => { if (ev === 'SIGNED_OUT') location.replace('index.html'); });
+
+boot();
+</script>
+</body>
+</html>
